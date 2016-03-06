@@ -77,6 +77,7 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 		if(callEdges.betweenStep(Common.toQ(method), Common.toQ(targetMethod)).eval().edges().isEmpty()){
 			GraphElement callEdge = Graph.U.createEdge(method, targetMethod);
 			callEdge.tag(CALL);
+			callEdge.attr().put(XCSG.name, "call");
 		}
 	}
 

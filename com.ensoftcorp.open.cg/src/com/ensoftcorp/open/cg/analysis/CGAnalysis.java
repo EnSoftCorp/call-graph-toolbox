@@ -23,12 +23,18 @@ public abstract class CGAnalysis {
 		if(hasRun){
 			return 0;
 		} else {
-			long start = System.currentTimeMillis();
-			Log.info("Starting " + getClass().getSimpleName() + " Points-to Analysis");
-			runAnalysis();
-			Log.info("Finished " + getClass().getSimpleName() + " Points-to Analysis");
-			hasRun = true;
-			return System.currentTimeMillis() - start;
+			try {
+				long start = System.currentTimeMillis();
+				Log.info("Starting " + getClass().getSimpleName() + " Points-to Analysis");
+				runAnalysis();
+				Log.info("Finished " + getClass().getSimpleName() + " Points-to Analysis");
+				hasRun = true;
+				return System.currentTimeMillis() - start;
+			} catch (Exception e){
+				Log.error("Error constructing call graph.", e);
+				hasRun = false;
+				return -1;
+			}
 		}
 	}
 	
