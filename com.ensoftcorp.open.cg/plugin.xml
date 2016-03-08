@@ -5,6 +5,9 @@
     <extension
          point="com.ensoftcorp.atlas.ui.smartViewScript">
       <script
+            class="com.ensoftcorp.open.cg.smart.RACallGraphSmartView">
+      </script>
+      <script
             class="com.ensoftcorp.open.cg.smart.CHACallGraphSmartView">
       </script>
       <script
