@@ -44,7 +44,10 @@ public abstract class CallGraphSmartView extends FilteringAtlasSmartViewScript i
 		
 		// compute what is on the frontier
 		Q frontierForward = filteredSelection.forwardStepOn(completeResult, forward+1);
+		frontierForward = frontierForward.retainEdges().differenceEdges(result);
+		
 		Q frontierReverse = filteredSelection.reverseStepOn(completeResult, reverse+1);
+		frontierReverse = frontierReverse.retainEdges().differenceEdges(result);
 
 		return new com.ensoftcorp.atlas.core.script.FrontierStyledResult(result, frontierReverse, frontierForward, new MarkupFromH(h));
 	}
