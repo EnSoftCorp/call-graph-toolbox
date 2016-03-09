@@ -29,6 +29,9 @@ public class RapidTypeAnalysis extends CGAnalysis {
 	@Override
 	protected void runAnalysis() {
 		AtlasSet<GraphElement> mainMethods = DiscoverMainMethods.getMainMethods().eval().nodes();
+		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
+		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
+		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
 		
 		// create a worklist and add the main methods
 		LinkedList<GraphElement> worklist = new LinkedList<GraphElement>();
@@ -51,12 +54,10 @@ public class RapidTypeAnalysis extends CGAnalysis {
 			Q methodRCG = Common.toQ(cgRTA).reverse(Common.toQ(method));
 			
 			// allocations are contained (declared) within the methods in the method reverse call graph
-			Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
 			Q allocations = declarations.forward(methodRCG).nodesTaggedWithAny(XCSG.Instantiation);
 			
 			// collect the types of each allocation
-			Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
-			AtlasSet<GraphElement> allocationTypes = typeOfEdges.successors(allocations).eval().nodes();
+			Q allocationTypes = typeOfEdges.successors(allocations);
 			
 			// get a set of all the CHA call edges from the method
 			AtlasSet<GraphElement> callEdges = cgCHA.forwardStep(Common.toQ(method)).eval().edges();
@@ -75,12 +76,13 @@ public class RapidTypeAnalysis extends CGAnalysis {
 						worklist.add(calledMethod);
 					}
 				} else {
-					// the call edge is a dynamic dispatch, add it if the called
-					// method's declared type is one of the allocated types
-					// clarification: types declare methods, so here a method's 
-					// declared type is meant to refer to the type containing the method declaration
-					GraphElement declaredMethodType = declarations.predecessors(Common.toQ(calledMethod)).eval().nodes().getFirst();
-					if(allocationTypes.contains(declaredMethodType)){
+					// the call edge is a dynamic dispatch, need to resolve possible dispatches
+					// a dispatch is possible if the type declaring the method is one of the allocated types
+					// note: we have to consider the subtype hierarchy of the type declaring the method
+					// because methods can be inherited from parent types
+					Q typeDeclaringCalledMethod = declarations.predecessors(Common.toQ(calledMethod));
+					Q typeDeclaringCalledMethodSubTypes = typeHierarchy.reverse(typeDeclaringCalledMethod);
+					if(!allocationTypes.intersection(typeDeclaringCalledMethodSubTypes).eval().nodes().isEmpty()){
 						cgRTA.add(callEdge);
 						if(!worklist.contains(calledMethod)){
 							worklist.add(calledMethod);
