@@ -51,7 +51,8 @@ public class RapidTypeAnalysis extends CGAnalysis {
 			
 			// for the given method gather a list of all new allocation types
 			// in the given method and its RTA based reverse call graph
-			Q methodRCG = Common.toQ(cgRTA).reverse(Common.toQ(method));
+			// note: since RTA call graph is empty to start be sure to include the origin method! 
+			Q methodRCG = Common.toQ(cgRTA).reverse(Common.toQ(method)).union(Common.toQ(method));
 			
 			// allocations are contained (declared) within the methods in the method reverse call graph
 			Q allocations = declarations.forward(methodRCG).nodesTaggedWithAny(XCSG.Instantiation);
