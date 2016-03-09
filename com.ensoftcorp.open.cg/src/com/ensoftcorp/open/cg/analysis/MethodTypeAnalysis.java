@@ -54,7 +54,8 @@ public class MethodTypeAnalysis extends CGAnalysis {
 			GraphElement method = worklist.removeFirst();
 			
 			// get the current reverse call graph of the given method
-			Q methodRCG = Common.toQ(cgMTA).reverse(Common.toQ(method));
+			// note: since MTA call graph is empty to start be sure to include the origin method! 
+			Q methodRCG = Common.toQ(cgMTA).reverse(Common.toQ(method)).union(Common.toQ(method));
 			Q parentMethods = methodRCG.difference(Common.toQ(method));
 			
 			// restrict allocation types declared in parents to only the types that are compatible 
@@ -84,7 +85,7 @@ public class MethodTypeAnalysis extends CGAnalysis {
 			// finally the set of all allocation types that could reach this method 
 			// is the set of parent allocations that can be passed through the methods parameters
 			// unioned with the local allocations types (types initialized locally or returned via a callsite return value)
-			AtlasSet<GraphElement> allocationTypes = localAllocationTypes.union(parentAllocationTypes).eval().nodes();
+			Q allocationTypes = localAllocationTypes.union(parentAllocationTypes);
 			
 			// get a set of all the CHA call edges from the method
 			AtlasSet<GraphElement> callEdges = cgCHA.forwardStep(Common.toQ(method)).eval().edges();
@@ -103,10 +104,13 @@ public class MethodTypeAnalysis extends CGAnalysis {
 						worklist.add(calledMethod);
 					}
 				} else {
-					// the call edge is a dynamic dispatch, add it if the called
-					// method's declared type is one of the allocated types
-					GraphElement declaredMethodType = containsEdges.predecessors(Common.toQ(calledMethod)).eval().nodes().getFirst();
-					if(allocationTypes.contains(declaredMethodType)){
+					// the call edge is a dynamic dispatch, need to resolve possible dispatches
+					// a dispatch is possible if the type declaring the method is one of the allocated types
+					// note: we have to consider the subtype hierarchy of the type declaring the method
+					// because methods can be inherited from parent types
+					Q typeDeclaringCalledMethod = containsEdges.predecessors(Common.toQ(calledMethod));
+					Q typeDeclaringCalledMethodSubTypes = typeHierarchy.reverse(typeDeclaringCalledMethod);
+					if(!allocationTypes.intersection(typeDeclaringCalledMethodSubTypes).eval().nodes().isEmpty()){
 						cgMTA.add(callEdge);
 						if(!worklist.contains(calledMethod)){
 							worklist.add(calledMethod);
