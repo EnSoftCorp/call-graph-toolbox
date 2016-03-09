@@ -13,18 +13,21 @@ import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.utils.DiscoverMainMethods;
 
 /**
- * Performs a Rapid Type Analysis (RTA)
+ * Performs a Field Type Analysis (FTA), which is a modification
+ * to RTA discussed in the paper:
+ * Scalable Propagation-Based Call Graph Construction Algorithms
+ * by Frank Tip and Jens Palsberg.
  * 
  * In terms of call graph construction precision this algorithm 
- * ranks better than CHA.
+ * ranks better than RTA but worse than a 0-CFA.
  * 
- * Reference: https://courses.cs.washington.edu/courses/cse501/04wi/papers/bacon-oopsla96.pdf
+ * Reference: http://web.cs.ucla.edu/~palsberg/paper/oopsla00.pdf
  * 
  * @author Ben Holland
  */
-public class RapidTypeAnalysis extends CGAnalysis {
+public class FieldTypeAnalysis extends CGAnalysis {
 
-	public static final String CALL = "RTA-CALL";
+	public static final String CALL = "FTA-CALL";
 	
 	@Override
 	protected void runAnalysis() {
@@ -77,8 +80,6 @@ public class RapidTypeAnalysis extends CGAnalysis {
 				} else {
 					// the call edge is a dynamic dispatch, add it if the called
 					// method's declared type is one of the allocated types
-					// clarification: types declare methods, so here a method's 
-					// declared type is meant to refer to the type containing the method declaration
 					GraphElement declaredMethodType = declarations.predecessors(Common.toQ(calledMethod)).eval().nodes().getFirst();
 					if(allocationTypes.contains(declaredMethodType)){
 						cgRTA.add(callEdge);
