@@ -53,7 +53,8 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 					Q receiverObjects = dataFlowEdges.predecessors(thisNode);
 					Q receiverObjectTypes = typeOfEdges.successors(receiverObjects);
 					// then extend those types to subtypes in the type hierarchy
-					receiverObjectTypes = typeHierarchy.reverse(receiverObjectTypes);
+					// we should also include the direct descendant path from the declared type from Object to include any inherited methods
+					receiverObjectTypes = typeHierarchy.reverse(receiverObjectTypes).union(typeHierarchy.forward(receiverObjectTypes));
 					// finally match each method signature in the type hierarchy to called method
 					GraphElement methodSignature = methodSignatureGraph.edges(callsite, NodeDirection.OUT).getFirst().getNode(EdgeDirection.TO);
 					AtlasSet<GraphElement> resolvedDispatches = CommonQueries.dynamicDispatch(receiverObjectTypes, Common.toQ(methodSignature)).eval().nodes();
