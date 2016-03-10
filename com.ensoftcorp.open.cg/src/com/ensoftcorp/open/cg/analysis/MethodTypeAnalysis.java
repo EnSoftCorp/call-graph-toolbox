@@ -29,13 +29,15 @@ import com.ensoftcorp.open.cg.utils.DiscoverMainMethods;
 public class MethodTypeAnalysis extends CGAnalysis {
 
 	public static final String CALL = "MTA-CALL";
+
+	private static final String TYPES_SET = "MTA-TYPES";
 	
 	@Override
 	protected void runAnalysis() {
 		AtlasSet<GraphElement> mainMethods = DiscoverMainMethods.getMainMethods().eval().nodes();
 		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
 		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
-		Q containsEdges = Common.universe().edgesTaggedWithAny(XCSG.Contains);
+		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
 		
 		// create a worklist and add the main methods
 		LinkedList<GraphElement> worklist = new LinkedList<GraphElement>();
@@ -49,45 +51,51 @@ public class MethodTypeAnalysis extends CGAnalysis {
 		// initially the MTA based call graph is empty
 		AtlasSet<GraphElement> cgMTA = new AtlasHashSet<GraphElement>();
 		
-		// iterate until the worklist is empty
+		// iterate until the worklist is empty (in MTA the worklist only contains methods)
 		while(!worklist.isEmpty()){
 			GraphElement method = worklist.removeFirst();
 			
-			// get the current reverse call graph of the given method
-			// note: since MTA call graph is empty to start be sure to include the origin method! 
-			Q methodRCG = Common.toQ(cgMTA).reverse(Common.toQ(method)).union(Common.toQ(method));
-			Q parentMethods = methodRCG.difference(Common.toQ(method));
+			// our goal is to first build a set of feasible allocation types that could reach this method
+			AtlasSet<GraphElement> allocationTypes = new AtlasHashSet<GraphElement>();
 			
+			// we should consider the allocation types instantiated directly in the method
+			AtlasSet<GraphElement> methodAllocationTypes = getAllocationTypesSet(method);
+			if(methodAllocationTypes.isEmpty()){
+				// allocations are contained (declared) within the methods in the method reverse call graph
+				Q methodDeclarations = declarations.forward(Common.toQ(method));
+				Q allocations = methodDeclarations.nodesTaggedWithAny(XCSG.Instantiation);
+				// collect the types of each allocation
+				methodAllocationTypes.addAll(typeOfEdges.successors(allocations).eval().nodes());
+			}
+			allocationTypes.addAll(methodAllocationTypes);
+			
+			// we should also include the allocation types of each parent method (in the current MTA call graph)
+			// but we should only allow compatible parent allocation types which could be passed through the method's parameter types or subtypes
 			// restrict allocation types declared in parents to only the types that are compatible 
 			// with the type or subtype of each of the method's parameters
 			Q parameters = CommonQueries.methodParameter(Common.toQ(method));
 			Q parameterTypes = typeOfEdges.successors(parameters);
 			Q parameterTypeHierarchy = typeHierarchy.reverse(parameterTypes);
+			// get compatible parent allocation types
+			AtlasSet<GraphElement> parentMethods = Common.toQ(cgMTA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
+			for(GraphElement parentMethod : parentMethods){
+				Q parentAllocationTypes = Common.toQ(getAllocationTypesSet(parentMethod));
+				// remove the parent allocation types that could not be passed through the method's parameters
+				parentAllocationTypes = parameterTypeHierarchy.intersection(parentAllocationTypes);
+				// add the parameter type compatible allocation types
+				allocationTypes.addAll(parentAllocationTypes.eval().nodes());
+			}
 			
-			// collect the types of each parent allocation
-			Q parentAllocations = containsEdges.forward(parentMethods).nodesTaggedWithAny(XCSG.Instantiation);
-			Q parentAllocationTypes = typeOfEdges.successors(parentAllocations);
-			
-			// remove the parent allocation types that could not be passed through the method's parameters
-			parentAllocationTypes = parameterTypeHierarchy.intersection(parentAllocationTypes);
-			
-			// get local allocations that are made by directly instantiating something in the given method
-			Q localAllocations = containsEdges.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.Instantiation);
-
+			// finally MTA considers the return types of methods that are called from the given method
 			// add allocations that are made by calling a method (static or virtual) that return an allocation
 			// note that the declared return type does not involve resolving dynamic dispatches (so this could be the
 			// return type of any method resolved by a CHA analysis since all are statically typed to the same type)
-			localAllocations = localAllocations.union(CommonQueries.methodReturn(cgCHA.successors(Common.toQ(method))));
-			
-			// get the local allocation types
-			Q localAllocationTypes = typeOfEdges.successors(localAllocations);
-			
-			// finally the set of all allocation types that could reach this method 
-			// is the set of parent allocations that can be passed through the methods parameters
-			// unioned with the local allocations types (types initialized locally or returned via a callsite return value)
-			Q allocationTypes = localAllocationTypes.union(parentAllocationTypes);
-			
-			// get a set of all the CHA call edges from the method
+			Q returnTypes = typeOfEdges.successors(CommonQueries.methodReturn(cgCHA.successors(Common.toQ(method))));
+			allocationTypes.addAll(returnTypes.eval().nodes());
+
+			// next get a set of all the CHA call edges from the method and create an MTA edge
+			// from the method to the target method in the CHA call graph if the target methods
+			// type is compatible with the feasibly allocated types that would reach this method
 			AtlasSet<GraphElement> callEdges = cgCHA.forwardStep(Common.toQ(method)).eval().edges();
 			for(GraphElement callEdge : callEdges){
 				// add static dispatches to the mta call graph
@@ -98,7 +106,7 @@ public class MethodTypeAnalysis extends CGAnalysis {
 					if(!worklist.contains(calledMethod)){
 						worklist.add(calledMethod);
 					}
-				} else if(calledMethod.taggedWith(XCSG.Constructor)){
+				} else if(calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
 					cgMTA.add(callEdge);
 					if(!worklist.contains(calledMethod)){
 						worklist.add(calledMethod);
@@ -108,9 +116,9 @@ public class MethodTypeAnalysis extends CGAnalysis {
 					// a dispatch is possible if the type declaring the method is one of the allocated types
 					// note: we have to consider the subtype hierarchy of the type declaring the method
 					// because methods can be inherited from parent types
-					Q typeDeclaringCalledMethod = containsEdges.predecessors(Common.toQ(calledMethod));
+					Q typeDeclaringCalledMethod = declarations.predecessors(Common.toQ(calledMethod));
 					Q typeDeclaringCalledMethodSubTypes = typeHierarchy.reverse(typeDeclaringCalledMethod);
-					if(!allocationTypes.intersection(typeDeclaringCalledMethodSubTypes).eval().nodes().isEmpty()){
+					if(!Common.toQ(allocationTypes).intersection(typeDeclaringCalledMethodSubTypes).eval().nodes().isEmpty()){
 						cgMTA.add(callEdge);
 						if(!worklist.contains(calledMethod)){
 							worklist.add(calledMethod);
@@ -125,6 +133,24 @@ public class MethodTypeAnalysis extends CGAnalysis {
 		for(GraphElement mtaEdge : cgMTA){
 			mtaEdge.tag(CALL);
 		}	
+	}
+	
+	/**
+	 * Gets or creates the types set for a graph element
+	 * Returns a reference to the types set so that updates to the 
+	 * set will also update the set on the graph element.
+	 * @param ge
+	 * @return 
+	 */
+	@SuppressWarnings("unchecked")
+	private static AtlasSet<GraphElement> getAllocationTypesSet(GraphElement ge){
+		if(ge.hasAttr(TYPES_SET)){
+			return (AtlasSet<GraphElement>) ge.getAttr(TYPES_SET);
+		} else {
+			AtlasSet<GraphElement> types = new AtlasHashSet<GraphElement>();
+			ge.putAttr(TYPES_SET, types);
+			return types;
+		}
 	}
 	
 }

@@ -25,6 +25,8 @@ import com.ensoftcorp.open.cg.utils.DiscoverMainMethods;
 public class RapidTypeAnalysis extends CGAnalysis {
 
 	public static final String CALL = "RTA-CALL";
+
+	private static final String TYPES_SET = "RTA-TYPES";
 	
 	@Override
 	protected void runAnalysis() {
@@ -45,22 +47,35 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		// initially the RTA based call graph is empty
 		AtlasSet<GraphElement> cgRTA = new AtlasHashSet<GraphElement>();
 		
-		// iterate until the worklist is empty
+		// iterate until the worklist is empty (in RTA the worklist only contains methods)
 		while(!worklist.isEmpty()){
 			GraphElement method = worklist.removeFirst();
 			
-			// for the given method gather a list of all new allocation types
-			// in the given method and its RTA based reverse call graph
-			// note: since RTA call graph is empty to start be sure to include the origin method! 
-			Q methodRCG = Common.toQ(cgRTA).reverse(Common.toQ(method)).union(Common.toQ(method));
+			// our goal is to first build a set of feasible allocation types that could reach this method
+			AtlasSet<GraphElement> allocationTypes = new AtlasHashSet<GraphElement>();
 			
-			// allocations are contained (declared) within the methods in the method reverse call graph
-			Q allocations = declarations.forward(methodRCG).nodesTaggedWithAny(XCSG.Instantiation);
+			// we should consider the allocation types instantiated directly in the method
+			AtlasSet<GraphElement> methodAllocationTypes = getAllocationTypesSet(method);
+			if(methodAllocationTypes.isEmpty()){
+				// allocations are contained (declared) within the methods in the method reverse call graph
+				Q methodDeclarations = declarations.forward(Common.toQ(method));
+				Q allocations = methodDeclarations.nodesTaggedWithAny(XCSG.Instantiation);
+				// collect the types of each allocation
+				methodAllocationTypes.addAll(typeOfEdges.successors(allocations).eval().nodes());
+			}
+			allocationTypes.addAll(methodAllocationTypes);
 			
-			// collect the types of each allocation
-			Q allocationTypes = typeOfEdges.successors(allocations);
-			
-			// get a set of all the CHA call edges from the method
+			// we should also include the allocation types of each parent method (in the current RTA call graph)
+			// note: parent methods does not include the origin method
+			AtlasSet<GraphElement> parentMethods = Common.toQ(cgRTA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
+			for(GraphElement parentMethod : parentMethods){
+				AtlasSet<GraphElement> parentAllocationTypes = getAllocationTypesSet(parentMethod);
+				allocationTypes.addAll(parentAllocationTypes);
+			}
+
+			// next get a set of all the CHA call edges from the method and create an RTA edge
+			// from the method to the target method in the CHA call graph if the target methods
+			// type is compatible with the feasibly allocated types that would reach this method
 			AtlasSet<GraphElement> callEdges = cgCHA.forwardStep(Common.toQ(method)).eval().edges();
 			for(GraphElement callEdge : callEdges){
 				// add static dispatches to the rta call graph
@@ -71,7 +86,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 					if(!worklist.contains(calledMethod)){
 						worklist.add(calledMethod);
 					}
-				} else if(calledMethod.taggedWith(XCSG.Constructor)){
+				} else if(calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
 					cgRTA.add(callEdge);
 					if(!worklist.contains(calledMethod)){
 						worklist.add(calledMethod);
@@ -83,7 +98,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 					// because methods can be inherited from parent types
 					Q typeDeclaringCalledMethod = declarations.predecessors(Common.toQ(calledMethod));
 					Q typeDeclaringCalledMethodSubTypes = typeHierarchy.reverse(typeDeclaringCalledMethod);
-					if(!allocationTypes.intersection(typeDeclaringCalledMethodSubTypes).eval().nodes().isEmpty()){
+					if(!Common.toQ(allocationTypes).intersection(typeDeclaringCalledMethodSubTypes).eval().nodes().isEmpty()){
 						cgRTA.add(callEdge);
 						if(!worklist.contains(calledMethod)){
 							worklist.add(calledMethod);
@@ -98,6 +113,24 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		for(GraphElement rtaEdge : cgRTA){
 			rtaEdge.tag(CALL);
 		}	
+	}
+	
+	/**
+	 * Gets or creates the types set for a graph element
+	 * Returns a reference to the types set so that updates to the 
+	 * set will also update the set on the graph element.
+	 * @param ge
+	 * @return 
+	 */
+	@SuppressWarnings("unchecked")
+	private static AtlasSet<GraphElement> getAllocationTypesSet(GraphElement ge){
+		if(ge.hasAttr(TYPES_SET)){
+			return (AtlasSet<GraphElement>) ge.getAttr(TYPES_SET);
+		} else {
+			AtlasSet<GraphElement> types = new AtlasHashSet<GraphElement>();
+			ge.putAttr(TYPES_SET, types);
+			return types;
+		}
 	}
 	
 }
