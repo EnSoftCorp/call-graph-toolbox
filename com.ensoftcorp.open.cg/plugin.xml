@@ -20,6 +20,9 @@
             class="com.ensoftcorp.open.cg.smart.FTACallGraphSmartView">
       </script>
       <script
+            class="com.ensoftcorp.open.cg.smart.XTACallGraphSmartView">
+      </script>
+      <script
             class="com.ensoftcorp.open.cg.smart.ZeroCFACallGraphSmartView">
       </script>
    </extension>

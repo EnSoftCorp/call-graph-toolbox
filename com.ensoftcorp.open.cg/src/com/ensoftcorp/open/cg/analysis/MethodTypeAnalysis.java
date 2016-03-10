@@ -15,7 +15,7 @@ import com.ensoftcorp.open.cg.utils.DiscoverMainMethods;
 
 /**
  * Performs a Method Type Analysis (MTA), which is a modification
- * to MTA discussed in the paper:
+ * to RTA discussed in the paper:
  * Scalable Propagation-Based Call Graph Construction Algorithms
  * by Frank Tip and Jens Palsberg.
  * 
