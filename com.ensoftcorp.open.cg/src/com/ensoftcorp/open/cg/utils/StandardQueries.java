@@ -11,7 +11,7 @@ import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 
 public class StandardQueries {
-
+	
 	/**
 	 * Returns the containing method of a given Q or empty if one is not found
 	 * @param nodes
@@ -47,11 +47,11 @@ public class StandardQueries {
 	 *         returns the given node
 	 */
 	private static GraphElement getContainingNode(GraphElement node, String containingTag) {
-		if (node == null) {
+		if(node == null) {
 			return null;
 		}
 
-		while (true) {
+		while(true) {
 			GraphElement containsEdge = Graph.U.edges(node, NodeDirection.IN).taggedWithAll(XCSG.Contains).getFirst();
 			if (containsEdge == null) {
 				return null;

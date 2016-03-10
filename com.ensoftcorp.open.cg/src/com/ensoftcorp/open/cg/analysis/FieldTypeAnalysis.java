@@ -11,6 +11,7 @@ import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.utils.DiscoverMainMethods;
+import com.ensoftcorp.open.cg.utils.StandardQueries;
 
 /**
  * Performs a Field Type Analysis (FTA), which is a modification
@@ -55,7 +56,6 @@ public class FieldTypeAnalysis extends CGAnalysis {
 		// in FTA and its derivatives the worklist could contain methods or fields
 		while(!worklist.isEmpty()){
 			GraphElement workitem = worklist.removeFirst();
-			
 			if(workitem.taggedWith(XCSG.Method)){
 				GraphElement method = workitem;
 				
@@ -64,21 +64,40 @@ public class FieldTypeAnalysis extends CGAnalysis {
 				
 				// we should consider the allocation types instantiated directly in the method
 				AtlasSet<GraphElement> methodAllocationTypes = getAllocationTypesSet(method);
-				if(methodAllocationTypes.isEmpty()){
-					// allocations are contained (declared) within the methods in the method reverse call graph
-					Q methodDeclarations = declarations.forward(Common.toQ(method));
-					Q allocations = methodDeclarations.nodesTaggedWithAny(XCSG.Instantiation);
-					// collect the types of each allocation
-					methodAllocationTypes.addAll(typeOfEdges.successors(allocations).eval().nodes());
-				}
+				// allocations are contained (declared) within the methods in the method reverse call graph
+				Q methodDeclarations = declarations.forward(Common.toQ(method));
+				Q allocations = methodDeclarations.nodesTaggedWithAny(XCSG.Instantiation);
+				// collect the types of each allocation
+				methodAllocationTypes.addAll(typeOfEdges.successors(allocations).eval().nodes());
 				allocationTypes.addAll(methodAllocationTypes);
 				
-				// we should also include the allocation types of each parent method (in the current FTA call graph)
+				// for RTA and RTA derivatives we should also include the allocation types of each parent method (in the current FTA call graph)
 				// note: parent methods does not include the origin method
 				AtlasSet<GraphElement> parentMethods = Common.toQ(cgFTA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
 				for(GraphElement parentMethod : parentMethods){
 					AtlasSet<GraphElement> parentAllocationTypes = getAllocationTypesSet(parentMethod);
 					allocationTypes.addAll(parentAllocationTypes);
+				}
+				
+				// In MTA any method in the method or method's parents that reads from a field 
+				// can have a reference to the allocations that occur in any another method that writes to that field
+				Q reachableMethodDeclarations = declarations.forward(Common.toQ(method).union(Common.toQ(parentMethods)));
+				AtlasSet<GraphElement> readFields = dataFlowEdges.predecessors(reachableMethodDeclarations).nodesTaggedWithAny(XCSG.Field).eval().nodes();
+				for(GraphElement readField : readFields){
+					AtlasSet<GraphElement> fieldAllocationTypes = getAllocationTypesSet(readField);
+					allocationTypes.addAll(fieldAllocationTypes);
+				}
+				
+				// In MTA if the method writes to a field then all the allocated types available to the method
+				// can be propagated to the field
+				AtlasSet<GraphElement> writtenFields = dataFlowEdges.successors(reachableMethodDeclarations).nodesTaggedWithAny(XCSG.Field).eval().nodes();
+				for(GraphElement writtenField : writtenFields){
+					AtlasSet<GraphElement> fieldAllocationTypes = getAllocationTypesSet(writtenField);
+					if(fieldAllocationTypes.addAll(allocationTypes)){
+						if(!worklist.contains(writtenField)){
+							worklist.add(writtenField);
+						}	
+					}
 				}
 
 				// next get a set of all the CHA call edges from the method and create an FTA edge
@@ -116,7 +135,18 @@ public class FieldTypeAnalysis extends CGAnalysis {
 				}
 				
 			} else {
+				// new allocation types were propagated to a field, which means methods that read from the field may get new allocation types
 				GraphElement field = workitem;
+				AtlasSet<GraphElement> fieldAllocationTypes = getAllocationTypesSet(field);
+				AtlasSet<GraphElement> readingMethods = StandardQueries.getContainingMethods(dataFlowEdges.successors(Common.toQ(field))).eval().nodes();
+				for(GraphElement readingMethod : readingMethods){
+					AtlasSet<GraphElement> readingMethodAllocationTypes = getAllocationTypesSet(readingMethod);
+					if(readingMethodAllocationTypes.addAll(fieldAllocationTypes)){
+						if(!worklist.contains(readingMethod)){
+							worklist.add(readingMethod);
+						}
+					}
+				}
 			}
 		}
 		
