@@ -26,21 +26,22 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 
 	public static final String CALL = "CHA-CALL"; 
 	
+	private Q containsEdges = Common.universe().edgesTaggedWithAny(XCSG.Contains);
+	private Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
+	private Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
+	private Q invokedFunctionEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedFunction);
+	private Q identityPassedToEdges = Common.universe().edgesTaggedWithAny(XCSG.IdentityPassedTo);
+	private Q dataFlowEdges = Common.universe().edgesTaggedWithAny(XCSG.DataFlow_Edge);
+	private Q allTypes = typeHierarchy.reverse(Common.typeSelect("java.lang", "Object"));
+	private Graph methodSignatureGraph = Common.universe().edgesTaggedWithAny(XCSG.InvokedFunction, XCSG.InvokedSignature).eval();
+	private AtlasSet<GraphElement> methods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
+	
 	@Override
 	protected void runAnalysis() {
-		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
-		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
-		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
-		Q invokedFunctionEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedFunction);
-		Q identityPassedToEdges = Common.universe().edgesTaggedWithAny(XCSG.IdentityPassedTo);
-		Q dataFlowEdges = Common.universe().edgesTaggedWithAny(XCSG.DataFlow_Edge);
-		Graph methodSignatureGraph = Common.universe().edgesTaggedWithAny(XCSG.InvokedFunction, XCSG.InvokedSignature).eval();
-		AtlasSet<GraphElement> methods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
-		
 		// for each method
 		for(GraphElement method : methods){
 			// for each callsite
-			AtlasSet<GraphElement> callsites = declarations.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
+			AtlasSet<GraphElement> callsites = containsEdges.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
 			for(GraphElement callsite : callsites){
 				if(callsite.taggedWith(XCSG.StaticDispatchCallSite)){
 					// static dispatches (calls to constructors or methods marked as static) can be resolved immediately
@@ -48,22 +49,63 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 					createCallEdge(method, targetMethod);
 				} else if(callsite.taggedWith(XCSG.DynamicDispatchCallSite)){
 					// dynamic dispatches require additional analysis to be resolved
-					// first get the declared type of the receiver object
-					Q thisNode = identityPassedToEdges.predecessors(Common.toQ(callsite));
-					Q receiverObjects = dataFlowEdges.predecessors(thisNode);
-					Q receiverObjectTypes = typeOfEdges.successors(receiverObjects);
-					// then extend those types to subtypes in the type hierarchy
-					// we should also include the direct descendant path from the declared type from Object to include any inherited methods
-					receiverObjectTypes = typeHierarchy.reverse(receiverObjectTypes).union(typeHierarchy.forward(receiverObjectTypes));
-					// finally match each method signature in the type hierarchy to called method
+					// first get a set of all the target method's that match the callsite signature (just like RA)
 					GraphElement methodSignature = methodSignatureGraph.edges(callsite, NodeDirection.OUT).getFirst().getNode(EdgeDirection.TO);
-					AtlasSet<GraphElement> resolvedDispatches = CommonQueries.dynamicDispatch(receiverObjectTypes, Common.toQ(methodSignature)).eval().nodes();
-					for(GraphElement resolvedDispatch : resolvedDispatches){
+					Q allTargetMethods = CommonQueries.dynamicDispatch(allTypes, Common.toQ(methodSignature));
+	
+					// then get the declared type of the receiver object
+					Q thisNode = identityPassedToEdges.predecessors(Common.toQ(callsite));
+					Q receiverObject = dataFlowEdges.predecessors(thisNode);
+					Q declaredType = typeOfEdges.successors(receiverObject);
+					
+					// Since the dispatch was called on the "declared" type there must be at least one signature
+					// (abstract or concrete) in the descendant path (the direct path from Object to the declared path)
+					// the nearest method definition is the method definition closest to the declared type (including
+					// the declared type itself) while traversing from declared type to Object on the descendant path
+					Q nearestMatchingMethodDefinition = getNearestMatchingMethodDefinition(allTargetMethods, declaredType);
+					Q resolvedDispatches = nearestMatchingMethodDefinition;
+					
+					// subtypes of the declared type can override the nearest target method definition, 
+					// so make sure to include all the subtype method definitions
+					Q declaredTypeChildren = typeHierarchy.reverse(typeHierarchy.predecessors(declaredType));
+					resolvedDispatches = resolvedDispatches.union(containsEdges.forward(declaredTypeChildren).intersection(allTargetMethods));
+
+					// finally if a method is abstract, then its children must override it, so we can just remove all 
+					// abstract methods from the graph (this might come into play if nearest matching method definition was abstract)
+					// note: its possible for a method to be re-abstracted by a subtype after its been made concrete
+					resolvedDispatches = resolvedDispatches.difference(Common.universe().nodesTaggedWithAny(XCSG.abstractMethod));
+
+					// finally match each method signature in the type hierarchy to called method
+					for(GraphElement resolvedDispatch : resolvedDispatches.eval().nodes()){
 						createCallEdge(method, resolvedDispatch);
 					}
 				}
 			}
 		}
+	}
+
+	public Q getNearestMatchingMethodDefinition(Q allTargetMethods, Q declaredType) {
+		// it is possible that the subtypes of the declared type are inheriting the target method definition (not overriding 
+		// the supertype's definition) so, starting at the declared type, walk backwards one step at a time along the direct 
+		// descendant path (which runs from Object to the declared type) and search for the last (nearest) matching method  
+		// target (since this is definition that would be inherited).
+		Graph descendantPath = typeHierarchy.forward(declaredType).eval();
+		GraphElement nearestMethodDefinition = null;
+		GraphElement parentType = declaredType.eval().nodes().getFirst();
+		while(parentType != null){
+			AtlasSet<GraphElement> nearestMethodDefinitions = allTargetMethods.intersection(containsEdges.forward(Common.toQ(parentType))).eval().nodes();
+			if(!nearestMethodDefinitions.isEmpty()){
+				nearestMethodDefinition = nearestMethodDefinitions.getFirst();
+				break;
+			}
+			// keep searching...
+			parentType = descendantPath.edges(parentType, NodeDirection.OUT).getFirst().getNode(EdgeDirection.TO);
+		}
+		Q result = Common.empty();
+		if(nearestMethodDefinition != null){
+			result = Common.toQ(nearestMethodDefinition);
+		}
+		return result;
 	}
 
 	/**

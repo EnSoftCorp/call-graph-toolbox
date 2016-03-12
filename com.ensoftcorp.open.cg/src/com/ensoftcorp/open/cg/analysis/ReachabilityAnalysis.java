@@ -49,8 +49,15 @@ public class ReachabilityAnalysis extends CGAnalysis {
 					// in RA we just say if the method signature being called matches 
 					// a method then add a call edge
 					GraphElement methodSignature = methodSignatureGraph.edges(callsite, NodeDirection.OUT).getFirst().getNode(EdgeDirection.TO);
-					AtlasSet<GraphElement> resolvedDispatches = CommonQueries.dynamicDispatch(allTypes, Common.toQ(methodSignature)).eval().nodes();
-					for(GraphElement resolvedDispatch : resolvedDispatches){
+					Q resolvedDispatches = CommonQueries.dynamicDispatch(allTypes, Common.toQ(methodSignature));
+					
+					// finally if a method is abstract, then its children must override it, so we can just remove all 
+					// abstract methods from the graph (just added to be pedantic, not really needed since 
+					// Common.dynamicDispatch shouldn't return abstract methods)
+					// note: its possible for a method to be re-abstracted by a subtype after its been made concrete
+					resolvedDispatches = resolvedDispatches.difference(Common.universe().nodesTaggedWithAny(XCSG.abstractMethod));
+					
+					for(GraphElement resolvedDispatch : resolvedDispatches.eval().nodes()){
 						createCallEdge(method, resolvedDispatch);
 					}
 				}
