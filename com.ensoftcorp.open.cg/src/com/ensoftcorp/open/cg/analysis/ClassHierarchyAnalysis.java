@@ -84,11 +84,20 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 		}
 	}
 
+	/**
+	 * This method starts at the declared type and walks backwards one step at a
+	 * time along the direct descendant path (which runs from Object to the
+	 * declared type) and searches for the nearest matching method definition. A
+	 * matching method definition is defined as being in the set of the given
+	 * target methods.
+	 * 
+	 * @param allTargetMethods
+	 * @param declaredType
+	 * @return Returns a Q with a single node (or empty if no match was found)
+	 *         with the nearest matching method along the reverse descendant
+	 *         path
+	 */
 	public Q getNearestMatchingMethodDefinition(Q allTargetMethods, Q declaredType) {
-		// it is possible that the subtypes of the declared type are inheriting the target method definition (not overriding 
-		// the supertype's definition) so, starting at the declared type, walk backwards one step at a time along the direct 
-		// descendant path (which runs from Object to the declared type) and search for the last (nearest) matching method  
-		// target (since this is definition that would be inherited).
 		Graph descendantPath = typeHierarchy.forward(declaredType).eval();
 		GraphElement nearestMethodDefinition = null;
 		GraphElement parentType = declaredType.eval().nodes().getFirst();
