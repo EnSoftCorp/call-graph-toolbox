@@ -123,12 +123,12 @@ public class FieldTypeAnalysis extends CGAnalysis {
 						}
 					} else {
 						// the call edge is a dynamic dispatch, need to resolve possible dispatches
-						// a dispatch is possible if the type declaring the method is one of the allocated types
-						// note: we have to consider the subtype hierarchy of the type declaring the method
+						// a dispatch is possible if the type declaring the method is one of the 
+						// allocated types (or the parent of an allocated type)
+						// note: we should consider the supertype hierarchy of the allocation types
 						// because methods can be inherited from parent types
 						Q typeDeclaringCalledMethod = declarations.predecessors(Common.toQ(calledMethod));
-						Q typeDeclaringCalledMethodSubTypes = typeHierarchy.reverse(typeDeclaringCalledMethod);
-						if(!Common.toQ(allocationTypes).intersection(typeDeclaringCalledMethodSubTypes).eval().nodes().isEmpty()){
+						if(!typeHierarchy.forward(Common.toQ(allocationTypes)).intersection(typeDeclaringCalledMethod).eval().nodes().isEmpty()){
 							cgFTA.add(callEdge);
 							if(!worklist.contains(calledMethod)){
 								worklist.add(calledMethod);
