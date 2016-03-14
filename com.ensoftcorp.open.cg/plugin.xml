@@ -26,5 +26,14 @@
             class="com.ensoftcorp.open.cg.smart.ZeroCFACallGraphSmartView">
       </script>
    </extension>
+   
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="com.ensoftcorp.open.cg.ui.CallGraphPreferences"
+            id="com.ensoftcorp.open.cg.ui.preferences"
+            name="Call Graph Construction">
+      </page>
+   </extension>
 
 </plugin>

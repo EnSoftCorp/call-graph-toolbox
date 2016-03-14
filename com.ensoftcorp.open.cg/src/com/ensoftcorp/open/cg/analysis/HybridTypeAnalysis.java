@@ -6,11 +6,13 @@ import com.ensoftcorp.atlas.core.db.graph.GraphElement;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
+import com.ensoftcorp.atlas.core.log.Log;
 import com.ensoftcorp.atlas.core.query.Attr.Node;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.atlas.java.core.script.CommonQueries;
+import com.ensoftcorp.open.cg.ui.CallGraphPreferences;
 import com.ensoftcorp.open.cg.utils.DiscoverMainMethods;
 import com.ensoftcorp.open.cg.utils.StandardQueries;
 
@@ -35,16 +37,35 @@ public class HybridTypeAnalysis extends CGAnalysis {
 	
 	@Override
 	protected void runAnalysis() {
-		AtlasSet<GraphElement> mainMethods = DiscoverMainMethods.getMainMethods().eval().nodes();
 		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
 		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
 		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
 		Q dataFlowEdges = Common.universe().edgesTaggedWithAny(XCSG.DataFlow_Edge);
 		
-		// create a worklist and add the main methods
+		// create a worklist and add the root method set
 		LinkedList<GraphElement> worklist = new LinkedList<GraphElement>();
-		for(GraphElement mainMethod : mainMethods){
-			worklist.add(mainMethod);
+
+		AtlasSet<GraphElement> mainMethods = DiscoverMainMethods.getMainMethods().eval().nodes();
+		if(CallGraphPreferences.isLibraryCallGraphConstructionEnabled() || mainMethods.isEmpty()){
+			if(CallGraphPreferences.isLibraryCallGraphConstructionEnabled() && mainMethods.isEmpty()){
+				Log.warning("Application does not contain a main method, building a call graph using library assumptions.");
+			}
+			// if we are building a call graph for a library there is no main method...
+			// so we over approximate and consider every method as a valid program entry point
+			AtlasSet<GraphElement> allMethods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
+			for(GraphElement method : allMethods){
+				worklist.add(method);
+			}
+		} else {
+			// under normal circumstances this algorithm would be given a single main method
+			// but end users don't tend to think about this so consider any valid main method
+			// as a program entry point
+			if(mainMethods.size() > 1){
+				Log.warning("Application contains multiple main methods. The call graph may contain unexpected conservative edges as a result.");
+			}
+			for(GraphElement mainMethod : mainMethods){
+				worklist.add(mainMethod);
+			}
 		}
 		
 		// get the conservative call graph from CHA
