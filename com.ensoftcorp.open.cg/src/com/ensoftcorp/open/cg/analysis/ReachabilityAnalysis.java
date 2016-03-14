@@ -31,6 +31,7 @@ public class ReachabilityAnalysis extends CGAnalysis {
 	protected void runAnalysis(boolean libraryCallGraphConstructionEnabled) {
 		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
 		Q invokedFunctionEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedFunction);
+		Q allTypes = Common.typeSelect("java.lang", "Object");
 		
 		// for each method
 		AtlasSet<GraphElement> methods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
@@ -46,7 +47,7 @@ public class ReachabilityAnalysis extends CGAnalysis {
 					// dynamic dispatches require additional analysis to be resolved
 					
 					// in RA we just say if the method signature being called matches a method then add a call edge
-					AtlasSet<GraphElement> reachableMethods = getReachableMethods(callsite).eval().nodes();
+					AtlasSet<GraphElement> reachableMethods = getReachableMethods(callsite, allTypes);
 					
 					// create a call edge from the method to each matching method
 					for(GraphElement reachableMethod : reachableMethods){
@@ -79,10 +80,14 @@ public class ReachabilityAnalysis extends CGAnalysis {
 	 * @param callsite
 	 * @return
 	 */
-	public static Q getReachableMethods(GraphElement callsite){
+	public static AtlasSet<GraphElement> getReachableMethods(GraphElement callsite, Q typesToSearch){
+		Q containsEdges = Common.universe().edgesTaggedWithAny(XCSG.Contains);
+		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
+		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
+		
 		// first create a set of candidate methods to select from
 		// note: specifically including abstract methods so we can use them later for library construction
-		Q candidateMethods = Common.universe().nodesTaggedWithAny(XCSG.Method)
+		Q candidateMethods = containsEdges.forwardStep(typesToSearch).nodesTaggedWithAny(XCSG.Method)
 				.difference(Common.universe().nodesTaggedWithAny(XCSG.Constructor, Node.IS_STATIC));
 		
 		// match the method name
@@ -95,8 +100,6 @@ public class ReachabilityAnalysis extends CGAnalysis {
 		AtlasSet<GraphElement> passedParameters = parameterPassToEdges.predecessors(Common.toQ(callsite)).eval().nodes();
 		
 		// filter out methods that do not take the exact same number and type of parameters
-		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
-		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
 		AtlasSet<GraphElement> matchingParameterMethods = new AtlasHashSet<GraphElement>();
 		for(GraphElement matchingMethod : matchingMethods){
 			// check if the number of parameters passed is the same size as the number of parameters expected
@@ -125,7 +128,7 @@ public class ReachabilityAnalysis extends CGAnalysis {
 		
 		// TODO: match return type
 		
-		return Common.toQ(matchingMethods);
+		return matchingMethods;
 	}
 
 }

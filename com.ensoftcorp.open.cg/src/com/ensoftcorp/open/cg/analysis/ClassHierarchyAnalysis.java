@@ -49,11 +49,8 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 					CallGraphConstruction.createCallEdge(method, targetMethod, CALL);
 				} else if(callsite.taggedWith(XCSG.DynamicDispatchCallSite)){
 					// dynamic dispatches require additional analysis to be resolved
-					
-					// first start with a reachability analysis
-					Q reachableMethods = ReachabilityAnalysis.getReachableMethods(callsite);
-					
-					// then get the declared type of the receiver object
+
+					// first get the declared type of the receiver object
 					Q thisNode = identityPassedToEdges.predecessors(Common.toQ(callsite));
 					Q receiverObject = dataFlowEdges.predecessors(thisNode);
 					Q declaredType = typeOfEdges.successors(receiverObject);
@@ -69,8 +66,10 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 					// subtypes of the declared type can override the nearest target method definition, 
 					// so make sure to include all the subtype method definitions
 					Q declaredSubtypeHierarchy = typeHierarchy.reverse(declaredType);
-					Q subtypeMethods = containsEdges.successors(declaredSubtypeHierarchy).nodesTaggedWithAny(XCSG.Method);
-					resolvedDispatches = resolvedDispatches.union(reachableMethods.intersection(subtypeMethods));
+					
+					// next perform a reachability analysis (RA) withing the set of subtypes
+					Q reachableMethods = Common.toQ(ReachabilityAnalysis.getReachableMethods(callsite, declaredSubtypeHierarchy));
+					resolvedDispatches = resolvedDispatches.union(reachableMethods);
 
 					// finally if a method is abstract, then its children must override it, so we can just remove all 
 					// abstract methods from the graph (this might come into play if nearest matching method definition was abstract)
