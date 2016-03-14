@@ -14,7 +14,7 @@ public class FTACallGraphSmartView extends CallGraphSmartView {
 
 	@Override
 	protected Q getCallEdges() {
-		Q callEdges = Common.universe().edgesTaggedWithAny(FieldTypeAnalysis.CALL);
+		Q callEdges = Common.universe().edgesTaggedWithAny(FieldTypeAnalysis.CALL, FieldTypeAnalysis.LIBRARY_CALL);
 		if(callEdges.eval().edges().isEmpty()){
 			FieldTypeAnalysis fta = new FieldTypeAnalysis();
 			fta.run(CallGraphPreferences.isLibraryCallGraphConstructionEnabled());

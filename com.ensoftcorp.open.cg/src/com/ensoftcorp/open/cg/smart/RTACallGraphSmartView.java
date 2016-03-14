@@ -14,7 +14,7 @@ public class RTACallGraphSmartView extends CallGraphSmartView {
 
 	@Override
 	protected Q getCallEdges() {
-		Q callEdges = Common.universe().edgesTaggedWithAny(RapidTypeAnalysis.CALL);
+		Q callEdges = Common.universe().edgesTaggedWithAny(RapidTypeAnalysis.CALL, RapidTypeAnalysis.LIBRARY_CALL);
 		if(callEdges.eval().edges().isEmpty()){
 			RapidTypeAnalysis rta = new RapidTypeAnalysis();
 			rta.run(CallGraphPreferences.isLibraryCallGraphConstructionEnabled());

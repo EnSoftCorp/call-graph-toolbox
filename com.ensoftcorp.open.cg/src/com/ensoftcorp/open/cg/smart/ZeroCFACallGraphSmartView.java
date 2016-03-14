@@ -14,7 +14,7 @@ public class ZeroCFACallGraphSmartView extends CallGraphSmartView {
 
 	@Override
 	protected Q getCallEdges() {
-		Q callEdges = Common.universe().edgesTaggedWithAny(ZeroControlFlowAnalysis.CALL);
+		Q callEdges = Common.universe().edgesTaggedWithAny(ZeroControlFlowAnalysis.CALL, ZeroControlFlowAnalysis.LIBRARY_CALL);
 		if(callEdges.eval().edges().isEmpty()){
 			ZeroControlFlowAnalysis zeroCFA = new ZeroControlFlowAnalysis();
 			zeroCFA.run(CallGraphPreferences.isLibraryCallGraphConstructionEnabled());

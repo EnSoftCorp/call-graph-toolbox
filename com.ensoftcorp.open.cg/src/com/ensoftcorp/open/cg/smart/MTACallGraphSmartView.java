@@ -14,7 +14,7 @@ public class MTACallGraphSmartView extends CallGraphSmartView {
 
 	@Override
 	protected Q getCallEdges() {
-		Q callEdges = Common.universe().edgesTaggedWithAny(MethodTypeAnalysis.CALL);
+		Q callEdges = Common.universe().edgesTaggedWithAny(MethodTypeAnalysis.CALL, MethodTypeAnalysis.LIBRARY_CALL);
 		if(callEdges.eval().edges().isEmpty()){
 			MethodTypeAnalysis mta = new MethodTypeAnalysis();
 			mta.run(CallGraphPreferences.isLibraryCallGraphConstructionEnabled());

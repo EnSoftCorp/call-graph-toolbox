@@ -31,6 +31,7 @@ import com.ensoftcorp.open.pointsto.ui.PointsToPreferences;
 public class ZeroControlFlowAnalysis extends CGAnalysis {
 
 	public static final String CALL = "0-CFA-CALL";
+	public static final String LIBRARY_CALL = "0-CFA-LIBRARY-CALL";
 	
 	@Override
 	protected void runAnalysis(boolean libraryCallGraphConstructionEnabled) {

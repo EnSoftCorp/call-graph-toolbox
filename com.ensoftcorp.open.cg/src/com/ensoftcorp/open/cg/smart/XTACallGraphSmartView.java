@@ -14,7 +14,7 @@ public class XTACallGraphSmartView extends CallGraphSmartView {
 
 	@Override
 	protected Q getCallEdges() {
-		Q callEdges = Common.universe().edgesTaggedWithAny(HybridTypeAnalysis.CALL);
+		Q callEdges = Common.universe().edgesTaggedWithAny(HybridTypeAnalysis.CALL, HybridTypeAnalysis.LIBRARY_CALL);
 		if(callEdges.eval().edges().isEmpty()){
 			HybridTypeAnalysis xta = new HybridTypeAnalysis();
 			xta.run(CallGraphPreferences.isLibraryCallGraphConstructionEnabled());
