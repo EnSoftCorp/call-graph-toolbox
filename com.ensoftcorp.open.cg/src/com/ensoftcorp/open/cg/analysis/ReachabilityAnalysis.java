@@ -1,14 +1,12 @@
 package com.ensoftcorp.open.cg.analysis;
 
-import com.ensoftcorp.atlas.core.db.graph.Graph;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement;
-import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
-import com.ensoftcorp.atlas.core.db.graph.GraphElement.NodeDirection;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
+import com.ensoftcorp.atlas.core.query.Attr.Node;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
-import com.ensoftcorp.atlas.java.core.script.CommonQueries;
+import com.ensoftcorp.open.cg.utils.CallGraphConstruction;
 
 /**
  * This is about the simplest call graph we can make (dumber than a CHA).
@@ -25,17 +23,15 @@ import com.ensoftcorp.atlas.java.core.script.CommonQueries;
 public class ReachabilityAnalysis extends CGAnalysis {
 
 	public static final String CALL = "RA-CALL"; 
+	public static final String LIBRARY_CALL = "RA-LIBRARY-CALL";
 	
 	@Override
-	protected void runAnalysis() {
+	protected void runAnalysis(boolean libraryCallGraphConstructionEnabled) {
 		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
-		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
-		Q allTypes = typeHierarchy.reverse(Common.typeSelect("java.lang", "Object"));
 		Q invokedFunctionEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedFunction);
-		Graph methodSignatureGraph = Common.universe().edgesTaggedWithAny(XCSG.InvokedFunction, XCSG.InvokedSignature).eval();
-		AtlasSet<GraphElement> methods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
 		
 		// for each method
+		AtlasSet<GraphElement> methods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
 		for(GraphElement method : methods){
 			// for each callsite
 			AtlasSet<GraphElement> callsites = declarations.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
@@ -43,42 +39,61 @@ public class ReachabilityAnalysis extends CGAnalysis {
 				if(callsite.taggedWith(XCSG.StaticDispatchCallSite)){
 					// static dispatches (calls to constructors or methods marked as static) can be resolved immediately
 					GraphElement targetMethod = invokedFunctionEdges.successors(Common.toQ(callsite)).eval().nodes().getFirst();
-					createCallEdge(method, targetMethod);
+					CallGraphConstruction.createCallEdge(method, targetMethod, CALL);
 				} else if(callsite.taggedWith(XCSG.DynamicDispatchCallSite)){
 					// dynamic dispatches require additional analysis to be resolved
-					// in RA we just say if the method signature being called matches 
-					// a method then add a call edge
-					GraphElement methodSignature = methodSignatureGraph.edges(callsite, NodeDirection.OUT).getFirst().getNode(EdgeDirection.TO);
-					Q resolvedDispatches = CommonQueries.dynamicDispatch(allTypes, Common.toQ(methodSignature));
 					
-					// finally if a method is abstract, then its children must override it, so we can just remove all 
-					// abstract methods from the graph (just added to be pedantic, not really needed since 
-					// Common.dynamicDispatch shouldn't return abstract methods)
-					// note: its possible for a method to be re-abstracted by a subtype after its been made concrete
-					resolvedDispatches = resolvedDispatches.difference(Common.universe().nodesTaggedWithAny(XCSG.abstractMethod));
+					// in RA we just say if the method signature being called matches a method then add a call edge
+					AtlasSet<GraphElement> reachableMethods = getReachableMethods(callsite).eval().nodes();
 					
-					for(GraphElement resolvedDispatch : resolvedDispatches.eval().nodes()){
-						createCallEdge(method, resolvedDispatch);
+					// create a call edge from the method to each matching method
+					for(GraphElement reachableMethod : reachableMethods){
+						// dispatches cannot happen to abstract methods
+						if(reachableMethod.taggedWith(XCSG.abstractMethod)){
+							if(libraryCallGraphConstructionEnabled){
+								// if library call graph construction is enabled then we will consider adding a special edge type
+								// in the case that the method signature was abstract since we may not have been able to resolve any
+								// dispatch targets (in the case the method is not implemented in the library) and since we cannot know 
+								// that the application won't re-implement the method anyway (unless it was marked final)
+								CallGraphConstruction.createLibraryCallEdge(method, reachableMethod, LIBRARY_CALL);
+							}
+						} else {
+							CallGraphConstruction.createCallEdge(method, reachableMethod, CALL);
+						}
 					}
 				}
 			}
 		}
 	}
-
+	
+	@Override
+	public boolean graphHasEvidenceOfPreviousRun() {
+		return Common.universe().edgesTaggedWithAny(CALL, LIBRARY_CALL).eval().edges().size() > 0;
+	}
+	
 	/**
-	 * Creates a CALL relationship between the method and the target method if one does not already exist
-	 * 
-	 * @param method
-	 * @param targetMethod
+	 * Returns a set of reachable methods (methods with the matching signature of the callsite)
+	 * Note: This method specifically includes abstract methods
+	 * @param callsite
 	 * @return
 	 */
-	private void createCallEdge(GraphElement method, GraphElement targetMethod) {
-		Q callEdges = Common.universe().edgesTaggedWithAny(CALL);
-		if(callEdges.betweenStep(Common.toQ(method), Common.toQ(targetMethod)).eval().edges().isEmpty()){
-			GraphElement callEdge = Graph.U.createEdge(method, targetMethod);
-			callEdge.tag(CALL);
-			callEdge.attr().put(XCSG.name, "call");
-		}
+	public static Q getReachableMethods(GraphElement callsite){
+		// first create a set of candidate methods to select from
+		// note: specifically including abstract methods so we can use them later for library construction
+		Q candidateMethods = Common.universe().nodesTaggedWithAny(XCSG.Method)
+				.difference(Common.universe().nodesTaggedWithAny(XCSG.Constructor, Node.IS_STATIC));
+		// then match the method name
+		String methodName = callsite.getAttr(XCSG.name).toString();
+		methodName = methodName.substring(0, methodName.indexOf("("));
+		Q matchingMethods = candidateMethods.selectNode(XCSG.name, methodName);
+		
+		// TODO: then match the parameter count
+		
+		// TODO: then match the parameter types
+		
+		// TODO: then match return type
+		
+		return matchingMethods;
 	}
 
 }

@@ -33,7 +33,7 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 	public static final String CALL = "0-CFA-CALL";
 	
 	@Override
-	protected void runAnalysis() {
+	protected void runAnalysis(boolean libraryCallGraphConstructionEnabled) {
 		if(!PointsToPreferences.isJimplePointsToAnalysisEnabled()){
 			throw new RuntimeException("Points-to analysis has not been run!");
 		}
@@ -83,6 +83,11 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 				}
 			}
 		}
+	}
+	
+	@Override
+	public boolean graphHasEvidenceOfPreviousRun() {
+		return Common.universe().edgesTaggedWithAny(CALL).eval().edges().size() > 0;
 	}
 
 }

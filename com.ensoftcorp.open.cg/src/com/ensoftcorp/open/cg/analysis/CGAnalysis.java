@@ -7,29 +7,33 @@ public abstract class CGAnalysis {
 	private boolean hasRun = false;
 	
 	/**
-	 * Returns true if the call graph analysis has completed
+	 * Returns true if the call graph construction has completed
 	 * @return
 	 */
 	public boolean hasRun(){
-		return hasRun;
+		return hasRun || graphHasEvidenceOfPreviousRun();
 	}
 	
+	public abstract boolean graphHasEvidenceOfPreviousRun();
+	
 	/**
-	 * Runs the call graph analysis (if it hasn't been run already)
+	 * Runs the call graph construction (if it hasn't been run already)
 	 * and returns the time in milliseconds to complete the analysis
 	 * @return
 	 */
-	public long run(){
-		if(hasRun){
+	public double run(final boolean libraryCallGraphConstructionEnabled){
+		if(hasRun()){
+			Log.info(getClass().getSimpleName() + " Call Graph construction has already completed.");
 			return 0;
 		} else {
 			try {
-				long start = System.currentTimeMillis();
-				Log.info("Starting " + getClass().getSimpleName() + " Points-to Analysis");
-				runAnalysis();
-				Log.info("Finished " + getClass().getSimpleName() + " Points-to Analysis");
+				long start = System.nanoTime();
+				Log.info("Starting " + getClass().getSimpleName() + " Call Graph Construction");
+				runAnalysis(libraryCallGraphConstructionEnabled);
+				Log.info("Finished " + getClass().getSimpleName() + " Call Graph Construction");
 				hasRun = true;
-				return System.currentTimeMillis() - start;
+				long stop = System.nanoTime();
+				return (stop - start)/1000.0/1000.0;
 			} catch (Exception e){
 				Log.error("Error constructing call graph.", e);
 				hasRun = false;
@@ -39,8 +43,8 @@ public abstract class CGAnalysis {
 	}
 	
 	/**
-	 * Runs the call graph analysis algorithm
+	 * Runs the call graph construction algorithm
 	 */
-	protected abstract void runAnalysis();
+	protected abstract void runAnalysis(boolean libraryCallGraphConstructionEnabled);
 	
 }

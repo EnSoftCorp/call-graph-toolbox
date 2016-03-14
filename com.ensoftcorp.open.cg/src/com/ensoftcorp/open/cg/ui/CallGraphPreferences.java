@@ -5,6 +5,7 @@ import org.eclipse.jface.preference.FieldEditorPreferencePage;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
+import com.ensoftcorp.atlas.core.log.Log;
 import com.ensoftcorp.open.cg.Activator;
 
 /**
@@ -19,7 +20,13 @@ public class CallGraphPreferences extends FieldEditorPreferencePage implements I
 	public static final String ENABLE_LIBRARY_CALL_GRAPH_CONSTRUCTION_DESCRIPTION = "Enable Library Call Graph Construction";
 	
 	public static boolean isLibraryCallGraphConstructionEnabled(){
-		return Activator.getDefault().getPreferenceStore().getBoolean(ENABLE_LIBRARY_CALL_GRAPH_CONSTRUCTION_BOOLEAN);
+		boolean result = false; // library call graph construction is disabled by default
+		try {
+			result = Activator.getDefault().getPreferenceStore().getBoolean(ENABLE_LIBRARY_CALL_GRAPH_CONSTRUCTION_BOOLEAN);
+		} catch (Exception e){
+			Log.error("Error accessing call graph construction preferences.", e);
+		}
+		return result;
 	}
 	
 	public CallGraphPreferences() {

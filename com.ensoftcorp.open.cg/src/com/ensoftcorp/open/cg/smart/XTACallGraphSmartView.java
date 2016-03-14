@@ -3,6 +3,7 @@ package com.ensoftcorp.open.cg.smart;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.open.cg.analysis.HybridTypeAnalysis;
+import com.ensoftcorp.open.cg.ui.CallGraphPreferences;
 
 public class XTACallGraphSmartView extends CallGraphSmartView {
 	
@@ -16,7 +17,7 @@ public class XTACallGraphSmartView extends CallGraphSmartView {
 		Q callEdges = Common.universe().edgesTaggedWithAny(HybridTypeAnalysis.CALL);
 		if(callEdges.eval().edges().isEmpty()){
 			HybridTypeAnalysis xta = new HybridTypeAnalysis();
-			xta.run();
+			xta.run(CallGraphPreferences.isLibraryCallGraphConstructionEnabled());
 		}
 		return callEdges;
 	}

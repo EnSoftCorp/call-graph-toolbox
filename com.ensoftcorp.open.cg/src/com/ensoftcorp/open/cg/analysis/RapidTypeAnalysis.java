@@ -11,7 +11,6 @@ import com.ensoftcorp.atlas.core.query.Attr.Node;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
-import com.ensoftcorp.open.cg.ui.CallGraphPreferences;
 import com.ensoftcorp.open.cg.utils.DiscoverMainMethods;
 
 /**
@@ -27,11 +26,12 @@ import com.ensoftcorp.open.cg.utils.DiscoverMainMethods;
 public class RapidTypeAnalysis extends CGAnalysis {
 
 	public static final String CALL = "RTA-CALL";
+	public static final String LIBRARY_CALL = "RTA-LIBRARY-CALL";
 	
 	private static final String TYPES_SET = "RTA-TYPES";
 	
 	@Override
-	protected void runAnalysis() {
+	protected void runAnalysis(boolean libraryCallGraphConstructionEnabled) {
 		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
 		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
 		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
@@ -40,8 +40,8 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		LinkedList<GraphElement> worklist = new LinkedList<GraphElement>();
 
 		AtlasSet<GraphElement> mainMethods = DiscoverMainMethods.getMainMethods().eval().nodes();
-		if(CallGraphPreferences.isLibraryCallGraphConstructionEnabled() || mainMethods.isEmpty()){
-			if(CallGraphPreferences.isLibraryCallGraphConstructionEnabled() && mainMethods.isEmpty()){
+		if(libraryCallGraphConstructionEnabled || mainMethods.isEmpty()){
+			if(libraryCallGraphConstructionEnabled && mainMethods.isEmpty()){
 				Log.warning("Application does not contain a main method, building a call graph using library assumptions.");
 			}
 			// if we are building a call graph for a library there is no main method...
@@ -152,6 +152,11 @@ public class RapidTypeAnalysis extends CGAnalysis {
 			ge.putAttr(TYPES_SET, types);
 			return types;
 		}
+	}
+	
+	@Override
+	public boolean graphHasEvidenceOfPreviousRun() {
+		return Common.universe().edgesTaggedWithAny(CALL, LIBRARY_CALL).eval().edges().size() > 0;
 	}
 	
 }

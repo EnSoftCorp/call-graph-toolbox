@@ -3,6 +3,7 @@ package com.ensoftcorp.open.cg.smart;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.open.cg.analysis.ZeroControlFlowAnalysis;
+import com.ensoftcorp.open.cg.ui.CallGraphPreferences;
 
 public class ZeroCFACallGraphSmartView extends CallGraphSmartView {
 
@@ -16,7 +17,7 @@ public class ZeroCFACallGraphSmartView extends CallGraphSmartView {
 		Q callEdges = Common.universe().edgesTaggedWithAny(ZeroControlFlowAnalysis.CALL);
 		if(callEdges.eval().edges().isEmpty()){
 			ZeroControlFlowAnalysis zeroCFA = new ZeroControlFlowAnalysis();
-			zeroCFA.run();
+			zeroCFA.run(CallGraphPreferences.isLibraryCallGraphConstructionEnabled());
 		}
 		return callEdges;
 	}

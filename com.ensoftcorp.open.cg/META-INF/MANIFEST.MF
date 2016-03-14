@@ -8,10 +8,10 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: 
  org.eclipse.debug.ui,
  com.ensoftcorp.open.toolbox.commons;bundle-version="2.5.2";visibility:=reexport,
- net.ontopia.utils;bundle-version="1.0.0";visibility:=reexport,
  com.ensoftcorp.open.pointsto;bundle-version="2.7.3";visibility:=reexport
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .
 Bundle-Activator: com.ensoftcorp.open.cg.Activator
 Export-Package: com.ensoftcorp.open.cg.analysis;uses:="com.ensoftcorp.atlas.core.query",
- com.ensoftcorp.open.cg.common
+ com.ensoftcorp.open.cg.common,
+ com.ensoftcorp.open.cg.ui
