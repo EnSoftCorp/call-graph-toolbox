@@ -17,16 +17,7 @@ public class CallGraphConstruction {
 	 * @return
 	 */
 	public static GraphElement createCallEdge(GraphElement method, GraphElement targetMethod, String relationship) {
-		Q callEdgesQ = Common.universe().edgesTaggedWithAny(relationship);
-		AtlasSet<GraphElement> callEdges = callEdgesQ.betweenStep(Common.toQ(method), Common.toQ(targetMethod)).eval().edges();
-		if(callEdges.isEmpty()){
-			GraphElement callEdge = Graph.U.createEdge(method, targetMethod);
-			callEdge.tag(relationship);
-			callEdge.attr().put(XCSG.name, "call");
-			return callEdge;
-		} else {
-			return callEdges.getFirst();
-		}
+		return createRelationship(method, targetMethod, relationship, "call");
 	}
 	
 	/**
@@ -37,12 +28,16 @@ public class CallGraphConstruction {
 	 * @return
 	 */
 	public static GraphElement createLibraryCallEdge(GraphElement method, GraphElement targetMethod, String relationship) {
+		return createRelationship(method, targetMethod, relationship, "library-call");
+	}
+	
+	private static GraphElement createRelationship(GraphElement method, GraphElement targetMethod, String relationship, String displayName) {
 		Q callEdgesQ = Common.universe().edgesTaggedWithAny(relationship);
 		AtlasSet<GraphElement> callEdges = callEdgesQ.betweenStep(Common.toQ(method), Common.toQ(targetMethod)).eval().edges();
 		if(callEdges.isEmpty()){
 			GraphElement callEdge = Graph.U.createEdge(method, targetMethod);
 			callEdge.tag(relationship);
-			callEdge.attr().put(XCSG.name, "library-call");
+			callEdge.attr().put(XCSG.name, displayName);
 			return callEdge;
 		} else {
 			return callEdges.getFirst();

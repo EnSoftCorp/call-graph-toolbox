@@ -12,8 +12,8 @@ import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.atlas.java.core.script.CommonQueries;
-import com.ensoftcorp.open.cg.utils.DiscoverMainMethods;
-import com.ensoftcorp.open.cg.utils.StandardQueries;
+import com.ensoftcorp.open.toolbox.commons.analysis.DiscoverMainMethods;
+import com.ensoftcorp.open.toolbox.commons.analysis.utils.StandardQueries;
 
 /**
  * Performs a Hybrid Type Analysis (XTA), which is a modification
@@ -45,7 +45,7 @@ public class HybridTypeAnalysis extends CGAnalysis {
 		// create a worklist and add the root method set
 		LinkedList<GraphElement> worklist = new LinkedList<GraphElement>();
 
-		AtlasSet<GraphElement> mainMethods = DiscoverMainMethods.getMainMethods().eval().nodes();
+		AtlasSet<GraphElement> mainMethods = DiscoverMainMethods.findMainMethods().eval().nodes();
 		if(libraryCallGraphConstructionEnabled || mainMethods.isEmpty()){
 			if(libraryCallGraphConstructionEnabled && mainMethods.isEmpty()){
 				Log.warning("Application does not contain a main method, building a call graph using library assumptions.");
