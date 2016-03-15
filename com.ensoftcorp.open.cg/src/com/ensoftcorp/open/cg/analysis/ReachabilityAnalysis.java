@@ -84,6 +84,10 @@ public class ReachabilityAnalysis extends CGAnalysis {
 		Q containsEdges = Common.universe().edgesTaggedWithAny(XCSG.Contains);
 		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
 		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
+		Q returnsEdges = Common.universe().edgesTaggedWithAny(XCSG.Returns);
+		Q methodSignatureEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedSignature);
+		Q parameterPassToEdges = Common.universe().edgesTaggedWithAny(XCSG.ParameterPassedTo);
+		
 		
 		// first create a set of candidate methods to select from
 		// note: specifically including abstract methods so we can use them later for library construction
@@ -93,15 +97,19 @@ public class ReachabilityAnalysis extends CGAnalysis {
 		// match the method name
 		String methodName = callsite.getAttr(XCSG.name).toString();
 		methodName = methodName.substring(0, methodName.indexOf("("));
-		AtlasSet<GraphElement> matchingMethods = candidateMethods.selectNode(XCSG.name, methodName).eval().nodes();
+		Q matchingMethods = candidateMethods.selectNode(XCSG.name, methodName);
+		
+		// match the return type
+		Q methodSignature = methodSignatureEdges.successors(Common.toQ(callsite));
+		Q returnType = returnsEdges.successors(methodSignature);
+		matchingMethods = returnsEdges.predecessors(returnType).intersection(matchingMethods);
 		
 		// get the callsite parameters to match
-		Q parameterPassToEdges = Common.universe().edgesTaggedWithAny(XCSG.ParameterPassedTo);
 		AtlasSet<GraphElement> passedParameters = parameterPassToEdges.predecessors(Common.toQ(callsite)).eval().nodes();
 		
 		// filter out methods that do not take the exact same number and type of parameters
-		AtlasSet<GraphElement> matchingParameterMethods = new AtlasHashSet<GraphElement>();
-		for(GraphElement matchingMethod : matchingMethods){
+		AtlasSet<GraphElement> result = new AtlasHashSet<GraphElement>();
+		for(GraphElement matchingMethod : matchingMethods.eval().nodes()){
 			// check if the number of parameters passed is the same size as the number of parameters expected
 			AtlasSet<GraphElement> candidateMethodParameters = CommonQueries.methodParameter(Common.toQ(matchingMethod)).eval().nodes();
 			if(passedParameters.size() == candidateMethodParameters.size()){
@@ -120,15 +128,12 @@ public class ReachabilityAnalysis extends CGAnalysis {
 					}
 				}
 				if(paramsMatch){
-					matchingParameterMethods.add(matchingMethod);
+					result.add(matchingMethod);
 				}
 			}
 		}
-		matchingMethods = matchingParameterMethods;
 		
-		// TODO: match return type
-		
-		return matchingMethods;
+		return result;
 	}
 
 }

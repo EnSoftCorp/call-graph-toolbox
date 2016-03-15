@@ -1,7 +1,6 @@
 package com.ensoftcorp.open.cg.utils;
 
 import com.ensoftcorp.atlas.core.query.Q;
-import com.ensoftcorp.atlas.core.query.Query;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.script.CommonQueries;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
@@ -30,13 +29,13 @@ public class DiscoverMainMethods {
 	
 	public static Q getMainMethods() {
 		// Step 1) select nodes from the index that are marked as public, static, methods
-		Q mainMethods = Query.universe().nodesTaggedWithAll(XCSG.publicVisibility, XCSG.ClassMethod);
+		Q mainMethods = Common.universe().nodesTaggedWithAll(XCSG.publicVisibility, XCSG.ClassMethod);
 		
 		// Step 2) select nodes from the public static methods that are named "main"
 		mainMethods = mainMethods.methods("main");
 		
 		// Step 3) filter out methods that are not void return types
-		Q returnsEdges = Query.universe().edgesTaggedWithAny(XCSG.Returns).retainEdges();
+		Q returnsEdges = Common.universe().edgesTaggedWithAny(XCSG.Returns).retainEdges();
 		Q voidMethods = returnsEdges.predecessors(Common.types("void"));
 		mainMethods = mainMethods.intersection(voidMethods);
 		
@@ -53,12 +52,12 @@ public class DiscoverMainMethods {
 		mainMethods = mainMethods.difference(methodsWithTwoOrMoreParams);
 		
 		// Step 5) filter out methods that do not take a one dimensional String array
-		Q elementTypeEdges = Query.universe().edgesTaggedWithAny(XCSG.ArrayElementType).retainEdges();
+		Q elementTypeEdges = Common.universe().edgesTaggedWithAny(XCSG.ArrayElementType).retainEdges();
 		Q stringArraysTypes = elementTypeEdges.predecessors(Common.typeSelect("java.lang", "String"));
 		// array types have a arrayTypeDimension attribute
 		Q oneDimensionStringArrayType = stringArraysTypes.selectNode(XCSG.Java.arrayTypeDimension, 1);
 		Q mainMethodFirstParams = CommonQueries.methodParameter(mainMethods, 0);
-		Q typeOfEdges = Query.universe().edgesTaggedWithAny(XCSG.TypeOf);
+		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
 		Q oneDimensionStringArrayParameters = typeOfEdges.predecessors(oneDimensionStringArrayType);
 		Q validMainMethodFirstParams = mainMethodFirstParams.intersection(oneDimensionStringArrayParameters);
 		mainMethods = paramEdges.predecessors(validMainMethodFirstParams);
