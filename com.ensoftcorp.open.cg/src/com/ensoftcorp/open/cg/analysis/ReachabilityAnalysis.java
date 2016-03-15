@@ -88,7 +88,6 @@ public class ReachabilityAnalysis extends CGAnalysis {
 		Q methodSignatureEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedSignature);
 		Q parameterPassToEdges = Common.universe().edgesTaggedWithAny(XCSG.ParameterPassedTo);
 		
-		
 		// first create a set of candidate methods to select from
 		// note: specifically including abstract methods so we can use them later for library construction
 		Q candidateMethods = containsEdges.forwardStep(typesToSearch).nodesTaggedWithAny(XCSG.Method)
