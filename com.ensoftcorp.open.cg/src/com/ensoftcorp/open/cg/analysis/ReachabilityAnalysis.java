@@ -54,7 +54,8 @@ public class ReachabilityAnalysis extends CGAnalysis {
 	protected void runAnalysis() {
 		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
 		Q invokedFunctionEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedFunction);
-		Q allTypes = Common.typeSelect("java.lang", "Object");
+		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
+		Q allTypes = typeHierarchy.reverse(Common.typeSelect("java.lang", "Object"));
 		
 		// for each method
 		AtlasSet<GraphElement> methods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
