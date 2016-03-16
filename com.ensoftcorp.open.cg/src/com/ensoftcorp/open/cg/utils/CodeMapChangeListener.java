@@ -5,9 +5,10 @@ import com.ensoftcorp.atlas.core.indexing.IIndexListener;
 public class CodeMapChangeListener implements IIndexListener {
 
 	private boolean indexHasChanged = false;
+	private boolean indexIsChanging = false;
 	
 	public boolean hasIndexChanged(){
-		return indexHasChanged;
+		return !indexIsChanging && indexHasChanged;
 	}
 	
 	public void reset(){
@@ -21,10 +22,14 @@ public class CodeMapChangeListener implements IIndexListener {
 	public void indexOperationError(IndexOperation io, Throwable t) {}
 
 	@Override
-	public void indexOperationStarted(IndexOperation io) {}
+	public void indexOperationStarted(IndexOperation io) {
+		indexHasChanged = false;
+		indexIsChanging = true;	
+	}
 
 	@Override
 	public void indexOperationComplete(IndexOperation io) {
+		indexIsChanging = false;
 		indexHasChanged = true;
 	}
 
