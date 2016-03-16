@@ -8,6 +8,7 @@ import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
+import com.ensoftcorp.atlas.core.log.Log;
 import com.ensoftcorp.atlas.core.query.Attr.Edge;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
@@ -33,7 +34,6 @@ import com.ensoftcorp.open.pointsto.ui.PointsToPreferences;
 public class ZeroControlFlowAnalysis extends CGAnalysis {
 
 	public static final String CALL = "0-CFA-CALL";
-	public static final String LIBRARY_CALL = "0-CFA-LIBRARY-CALL";
 	
 	private static ZeroControlFlowAnalysis instance = null;
 	private static CodeMapChangeListener codeMapChangeListener = null;
@@ -60,6 +60,19 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 	protected void runAnalysis() {
 		if(!PointsToPreferences.isJimplePointsToAnalysisEnabled()){
 			throw new RuntimeException("Points-to analysis has not been run!");
+		}
+		
+		// library call edges are conservatively covered by a CHA, otherwise CHA is not used by k-CFA
+		if(libraryCallGraphConstructionEnabled){
+			ClassHierarchyAnalysis cha = ClassHierarchyAnalysis.getInstance(libraryCallGraphConstructionEnabled);
+			if(cha.isLibraryCallGraphConstructionEnabled() != libraryCallGraphConstructionEnabled){
+				Log.warning("ClassHierarchyAnalysis was run without library call edges enabled, "
+						+ "the resulting call graph will be missing the LIBRARY-CALL edges.");
+			} else {
+				if(!cha.hasRun()){
+					cha.run();
+				}
+			}
 		}
 
 		// the points-to analysis just infers data flow edges
@@ -111,7 +124,7 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 	
 	@Override
 	public String[] getCallEdgeTags() {
-		return new String[]{CALL, LIBRARY_CALL};
+		return new String[]{CALL, ClassHierarchyAnalysis.LIBRARY_CALL};
 	}
 
 }

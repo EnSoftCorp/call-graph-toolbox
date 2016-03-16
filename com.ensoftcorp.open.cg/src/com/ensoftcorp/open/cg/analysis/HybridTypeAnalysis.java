@@ -33,7 +33,6 @@ import com.ensoftcorp.open.toolbox.commons.analysis.utils.StandardQueries;
 public class HybridTypeAnalysis extends CGAnalysis {
 
 	public static final String CALL = "XTA-CALL";
-	public static final String LIBRARY_CALL = "XTA-LIBRARY-CALL";
 
 	private static final String TYPES_SET = "XTA-TYPES";
 	
@@ -60,6 +59,17 @@ public class HybridTypeAnalysis extends CGAnalysis {
 	
 	@Override
 	protected void runAnalysis() {
+		// first get the conservative call graph from CHA
+		// for library calls, RTA uses CHA library call edges because assuming every that every type could be allocated
+		// outside of the method and passed into the library is just an expensive way to end back up at CHA
+		ClassHierarchyAnalysis cha = ClassHierarchyAnalysis.getInstance(libraryCallGraphConstructionEnabled);
+		if(libraryCallGraphConstructionEnabled && cha.isLibraryCallGraphConstructionEnabled() != libraryCallGraphConstructionEnabled){
+			Log.warning("ClassHierarchyAnalysis was run without library call edges enabled, "
+					+ "the resulting call graph will be missing the LIBRARY-CALL edges.");
+		}
+		Q cgCHA = cha.getCallGraph();
+		
+		// next create some subgraphs to work with
 		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
 		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
 		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
@@ -90,9 +100,6 @@ public class HybridTypeAnalysis extends CGAnalysis {
 				worklist.add(mainMethod);
 			}
 		}
-		
-		// get the conservative call graph from CHA
-		Q cgCHA = Common.universe().edgesTaggedWithAny(XCSG.Call);
 		
 		// initially the XTA based call graph is empty
 		AtlasSet<GraphElement> cgXTA = new AtlasHashSet<GraphElement>();
@@ -241,7 +248,7 @@ public class HybridTypeAnalysis extends CGAnalysis {
 	
 	@Override
 	public String[] getCallEdgeTags() {
-		return new String[]{CALL, LIBRARY_CALL};
+		return new String[]{CALL, ClassHierarchyAnalysis.LIBRARY_CALL};
 	}
 	
 }
