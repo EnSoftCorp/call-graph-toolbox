@@ -5,10 +5,12 @@ import com.ensoftcorp.atlas.core.db.graph.GraphElement;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.NodeDirection;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
+import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.utils.CallGraphConstruction;
+import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
 
 /**
  * This analysis builds a call graph using Class Hierarchy Analysis (CHA).
@@ -27,6 +29,27 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 	public static final String CALL = "CHA-CALL"; 
 	public static final String LIBRARY_CALL = "CHA-LIBRARY-CALL";
 	
+	private static ClassHierarchyAnalysis instance = null;
+	private static CodeMapChangeListener codeMapChangeListener = null;
+	
+	protected ClassHierarchyAnalysis(boolean libraryCallGraphConstructionEnabled) {
+		// exists only to defeat instantiation
+		super(libraryCallGraphConstructionEnabled);
+	}
+	
+	public static ClassHierarchyAnalysis getInstance(boolean enableLibraryCallGraphConstruction) {
+		if (instance == null || (codeMapChangeListener != null && codeMapChangeListener.hasIndexChanged())) {
+			instance = new ClassHierarchyAnalysis(enableLibraryCallGraphConstruction);
+			if(codeMapChangeListener == null){
+				codeMapChangeListener = new CodeMapChangeListener();
+				IndexingUtil.addListener(codeMapChangeListener);
+			} else {
+				codeMapChangeListener.reset();
+			}
+		}
+		return instance;
+	}
+	
 	private Q containsEdges = Common.universe().edgesTaggedWithAny(XCSG.Contains);
 	private Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
 	private Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
@@ -37,7 +60,7 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 	private AtlasSet<GraphElement> methods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
 	
 	@Override
-	protected void runAnalysis(boolean libraryCallGraphConstructionEnabled) {
+	protected void runAnalysis() {
 		// for each method
 		for(GraphElement method : methods){
 			// for each callsite
@@ -95,10 +118,10 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 			}
 		}
 	}
-
+	
 	@Override
-	public boolean graphHasEvidenceOfPreviousRun() {
-		return Common.universe().edgesTaggedWithAny(CALL, LIBRARY_CALL).eval().edges().size() > 0;
+	public String[] getCallEdgeTags() {
+		return new String[]{CALL, LIBRARY_CALL};
 	}
 
 }

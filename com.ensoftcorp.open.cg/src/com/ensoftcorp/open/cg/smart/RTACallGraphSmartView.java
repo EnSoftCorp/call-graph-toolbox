@@ -1,9 +1,7 @@
 package com.ensoftcorp.open.cg.smart;
 
 import com.ensoftcorp.atlas.core.query.Q;
-import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.open.cg.analysis.RapidTypeAnalysis;
-import com.ensoftcorp.open.cg.ui.CallGraphPreferences;
 
 public class RTACallGraphSmartView extends CallGraphSmartView {
 	
@@ -13,13 +11,9 @@ public class RTACallGraphSmartView extends CallGraphSmartView {
 	}
 
 	@Override
-	protected Q getCallEdges() {
-		Q callEdges = Common.universe().edgesTaggedWithAny(RapidTypeAnalysis.CALL, RapidTypeAnalysis.LIBRARY_CALL);
-		if(callEdges.eval().edges().isEmpty()){
-			RapidTypeAnalysis rta = new RapidTypeAnalysis();
-			rta.run(CallGraphPreferences.isLibraryCallGraphConstructionEnabled());
-		}
-		return callEdges;
+	protected Q getCallGraph(boolean enableCallGraphConstruction) {
+		RapidTypeAnalysis rta = RapidTypeAnalysis.getInstance(enableCallGraphConstruction);
+		return rta.getCallGraph();
 	}
 
 }

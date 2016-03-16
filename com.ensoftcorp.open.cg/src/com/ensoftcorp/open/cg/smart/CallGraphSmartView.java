@@ -9,6 +9,7 @@ import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.atlas.ui.scripts.selections.FilteringAtlasSmartViewScript;
 import com.ensoftcorp.atlas.ui.scripts.selections.IResizableScript;
 import com.ensoftcorp.atlas.ui.selection.event.IAtlasSelectionEvent;
+import com.ensoftcorp.open.cg.ui.CallGraphPreferences;
 
 public abstract class CallGraphSmartView extends FilteringAtlasSmartViewScript implements IResizableScript {
 
@@ -16,7 +17,7 @@ public abstract class CallGraphSmartView extends FilteringAtlasSmartViewScript i
 	 * Returns a call graph for the given analysis
 	 * @return
 	 */
-	protected abstract Q getCallEdges();
+	protected abstract Q getCallGraph(boolean enableCallGraphConstruction);
 	
 	@Override
 	protected String[] getSupportedNodeTags() {
@@ -32,10 +33,10 @@ public abstract class CallGraphSmartView extends FilteringAtlasSmartViewScript i
 	public FrontierStyledResult evaluate(IAtlasSelectionEvent event, int reverse, int forward) {
 		Q filteredSelection = filter(event.getSelection());
 
-		Q callEdges = getCallEdges();
+		Q cg = getCallGraph(CallGraphPreferences.isLibraryCallGraphConstructionEnabled());
 		Highlighter h = new Highlighter();
 		
-		Q completeResult = callEdges.forward(filteredSelection).union(callEdges.reverse(filteredSelection));
+		Q completeResult = cg.forward(filteredSelection).union(cg.reverse(filteredSelection));
 				
 		// compute what to show for current steps
 		Q f = filteredSelection.forwardStepOn(completeResult, forward);

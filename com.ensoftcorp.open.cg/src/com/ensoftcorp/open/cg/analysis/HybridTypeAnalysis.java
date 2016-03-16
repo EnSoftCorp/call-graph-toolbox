@@ -6,12 +6,14 @@ import com.ensoftcorp.atlas.core.db.graph.GraphElement;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
+import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.log.Log;
 import com.ensoftcorp.atlas.core.query.Attr.Node;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.atlas.java.core.script.CommonQueries;
+import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
 import com.ensoftcorp.open.toolbox.commons.analysis.DiscoverMainMethods;
 import com.ensoftcorp.open.toolbox.commons.analysis.utils.StandardQueries;
 
@@ -35,8 +37,29 @@ public class HybridTypeAnalysis extends CGAnalysis {
 
 	private static final String TYPES_SET = "XTA-TYPES";
 	
+	private static HybridTypeAnalysis instance = null;
+	private static CodeMapChangeListener codeMapChangeListener = null;
+	
+	protected HybridTypeAnalysis(boolean libraryCallGraphConstructionEnabled) {
+		// exists only to defeat instantiation
+		super(libraryCallGraphConstructionEnabled);
+	}
+	
+	public static HybridTypeAnalysis getInstance(boolean enableLibraryCallGraphConstruction) {
+		if (instance == null || (codeMapChangeListener != null && codeMapChangeListener.hasIndexChanged())) {
+			instance = new HybridTypeAnalysis(enableLibraryCallGraphConstruction);
+			if(codeMapChangeListener == null){
+				codeMapChangeListener = new CodeMapChangeListener();
+				IndexingUtil.addListener(codeMapChangeListener);
+			} else {
+				codeMapChangeListener.reset();
+			}
+		}
+		return instance;
+	}
+	
 	@Override
-	protected void runAnalysis(boolean libraryCallGraphConstructionEnabled) {
+	protected void runAnalysis() {
 		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
 		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
 		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
@@ -217,8 +240,8 @@ public class HybridTypeAnalysis extends CGAnalysis {
 	}
 	
 	@Override
-	public boolean graphHasEvidenceOfPreviousRun() {
-		return Common.universe().edgesTaggedWithAny(CALL, LIBRARY_CALL).eval().edges().size() > 0;
+	public String[] getCallEdgeTags() {
+		return new String[]{CALL, LIBRARY_CALL};
 	}
 	
 }

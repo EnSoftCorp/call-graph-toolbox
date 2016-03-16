@@ -3,12 +3,14 @@ package com.ensoftcorp.open.cg.analysis;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement;
 import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
+import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Attr.Node;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.script.CommonQueries;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.utils.CallGraphConstruction;
+import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
 
 /**
  * This is about the simplest call graph we can make (dumber than a CHA).
@@ -27,8 +29,29 @@ public class ReachabilityAnalysis extends CGAnalysis {
 	public static final String CALL = "RA-CALL"; 
 	public static final String LIBRARY_CALL = "RA-LIBRARY-CALL";
 	
+	private static ReachabilityAnalysis instance = null;
+	private static CodeMapChangeListener codeMapChangeListener = null;
+	
+	protected ReachabilityAnalysis(boolean libraryCallGraphConstructionEnabled) {
+		// exists only to defeat instantiation
+		super(libraryCallGraphConstructionEnabled);
+	}
+	
+	public static ReachabilityAnalysis getInstance(boolean enableLibraryCallGraphConstruction) {
+		if (instance == null || (codeMapChangeListener != null && codeMapChangeListener.hasIndexChanged())) {
+			instance = new ReachabilityAnalysis(enableLibraryCallGraphConstruction);
+			if(codeMapChangeListener == null){
+				codeMapChangeListener = new CodeMapChangeListener();
+				IndexingUtil.addListener(codeMapChangeListener);
+			} else {
+				codeMapChangeListener.reset();
+			}
+		}
+		return instance;
+	}
+	
 	@Override
-	protected void runAnalysis(boolean libraryCallGraphConstructionEnabled) {
+	protected void runAnalysis() {
 		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
 		Q invokedFunctionEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedFunction);
 		Q allTypes = Common.typeSelect("java.lang", "Object");
@@ -135,4 +158,8 @@ public class ReachabilityAnalysis extends CGAnalysis {
 		return result;
 	}
 
+	@Override
+	public String[] getCallEdgeTags() {
+		return new String[]{CALL, LIBRARY_CALL};
+	}
 }
