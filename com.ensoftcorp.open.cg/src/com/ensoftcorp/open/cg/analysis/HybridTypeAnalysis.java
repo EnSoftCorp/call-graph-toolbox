@@ -159,12 +159,13 @@ public class HybridTypeAnalysis extends CGAnalysis {
 					allocationTypes.addAll(fieldAllocationTypes);
 				}
 				
-				// In FTA if the method writes to a field then all the allocated types available to the method
+				// In FTA if the method writes to a field then all the compatible allocated types available to the method
 				// can be propagated to the field
 				AtlasSet<GraphElement> writtenFields = dataFlowEdges.successors(reachableMethodDeclarations).nodesTaggedWithAny(XCSG.Field).eval().nodes();
 				for(GraphElement writtenField : writtenFields){
 					AtlasSet<GraphElement> fieldAllocationTypes = getAllocationTypesSet(writtenField);
-					if(fieldAllocationTypes.addAll(allocationTypes)){
+					Q compatibleTypes = Common.toQ(allocationTypes).intersection(typeHierarchy.reverse(typeOfEdges.successors(Common.toQ(writtenField))));
+					if(fieldAllocationTypes.addAll(compatibleTypes.eval().nodes())){
 						if(!worklist.contains(writtenField)){
 							worklist.add(writtenField);
 						}	
