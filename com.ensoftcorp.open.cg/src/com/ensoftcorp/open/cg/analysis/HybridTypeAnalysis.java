@@ -24,7 +24,7 @@ import com.ensoftcorp.open.toolbox.commons.analysis.utils.StandardQueries;
  * by Frank Tip and Jens Palsberg.
  * 
  * In terms of call graph construction precision this algorithm 
- * ranks better than XTA but worse than a 0-CFA.
+ * ranks better than RTA but worse than a 0-CFA.
  * 
  * Reference: http://web.cs.ucla.edu/~palsberg/paper/oopsla00.pdf
  * 
