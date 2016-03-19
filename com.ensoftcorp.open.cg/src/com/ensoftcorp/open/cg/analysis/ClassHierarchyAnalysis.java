@@ -94,10 +94,26 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 					Q reachableMethods = Common.toQ(ReachabilityAnalysis.getReachableMethods(callsite, declaredSubtypeHierarchy));
 					resolvedDispatches = resolvedDispatches.union(reachableMethods);
 
-					// finally if a method is abstract, then its children must override it, so we can just remove all 
-					// abstract methods from the graph (this might come into play if nearest matching method definition was abstract)
+					// if a method is abstract, then its children must override it, so we can just remove all abstract
+					// methods from the graph (this might come into play if nearest matching method definition was abstract)
 					// note: its possible for a method to be re-abstracted by a subtype after its been made concrete
 					resolvedDispatches = resolvedDispatches.difference(Common.universe().nodesTaggedWithAny(XCSG.abstractMethod));
+					
+					// lastly, if the method signature is concrete and the type of the method signature is abstract 
+					// and all subtypes override the method signature then the method signature can never be called
+					// directly, so remove it from the result
+					boolean abstractMethodSignature = methodSignature.taggedWith(XCSG.abstractMethod);
+					if(!abstractMethodSignature){
+						Q methodSignatureType = containsEdges.predecessors(Common.toQ(methodSignature));
+						boolean abstractMethodSignatureType = methodSignatureType.eval().nodes().getFirst().taggedWith(XCSG.Java.AbstractClass);
+						if(abstractMethodSignatureType){
+							Q resolvedDispatchSubTypes = containsEdges.predecessors(resolvedDispatches.difference(Common.toQ(methodSignature)));
+							if(declaredSubtypeHierarchy.difference(methodSignatureType, resolvedDispatchSubTypes).eval().nodes().isEmpty()){
+								// all subtypes override method signature, method signature implementation can never be called
+								resolvedDispatches = resolvedDispatches.difference(Common.toQ(methodSignature));
+							}
+						}
+					}
 					
 					// add a call edge to each resolved concrete dispatch
 					for(GraphElement resolvedDispatch : resolvedDispatches.eval().nodes()){
