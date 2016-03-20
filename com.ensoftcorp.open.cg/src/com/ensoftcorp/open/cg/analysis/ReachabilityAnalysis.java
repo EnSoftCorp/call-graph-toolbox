@@ -56,8 +56,7 @@ public class ReachabilityAnalysis extends CGAnalysis {
 	protected void runAnalysis() {
 		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
 		Q invokedFunctionEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedFunction);
-		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
-		Q allTypes = typeHierarchy.reverse(Common.typeSelect("java.lang", "Object"));
+		Q allTypes = Common.universe().nodesTaggedWithAny(XCSG.Type);
 		
 		// for each method
 		AtlasSet<GraphElement> methods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
@@ -126,9 +125,13 @@ public class ReachabilityAnalysis extends CGAnalysis {
 		
 		// get the callsite parameters to match
 		AtlasSet<GraphElement> passedParameters = parameterPassToEdges.predecessors(Common.toQ(callsite)).eval().nodes();
+
+		AtlasSet<GraphElement> result = new AtlasHashSet<GraphElement>();
+		
+		// at least the method signature is reachable
+		result.add(methodSignature.eval().nodes().getFirst()); 
 		
 		// filter out methods that do not take the exact same number and type of parameters
-		AtlasSet<GraphElement> result = new AtlasHashSet<GraphElement>();
 		for(GraphElement matchingMethod : matchingMethods.eval().nodes()){
 			// check if the number of parameters passed is the same size as the number of parameters expected
 			AtlasSet<GraphElement> candidateMethodParameters = CommonQueries.methodParameter(Common.toQ(matchingMethod)).eval().nodes();
