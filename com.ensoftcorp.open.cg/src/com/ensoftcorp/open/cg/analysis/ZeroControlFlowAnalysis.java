@@ -81,25 +81,6 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 				}
 			}
 		}
-		
-		// import the statically resolved methods from CHA
-		AtlasSet<GraphElement> callEdges = Common.universe().edgesTaggedWithAny(XCSG.Call).eval().edges();
-		Q perControlFlowEdges = Common.universe().edgesTaggedWithAny(XCSG.ControlFlow_Edge);
-		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
-		for(GraphElement callEdge : callEdges){
-			// add static dispatches to the call graph
-			// includes called methods marked static and constructors
-			GraphElement calledMethod = callEdge.getNode(EdgeDirection.TO);
-			if(calledMethod.taggedWith(Node.IS_STATIC) || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
-				callEdge.tag(CALL);
-				
-				GraphElement callingMethod = callEdge.getNode(EdgeDirection.FROM);
-				Q callsites = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.CallSite);
-				for(GraphElement perControlFlowEdge : perControlFlowEdges.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
-					perControlFlowEdge.tag(PER_CONTROL_FLOW);
-				}
-			}
-		}
 
 		// the points-to analysis just infers data flow edges
 		// but the call edges are really just a summary of the 
@@ -142,6 +123,27 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 						.differenceEdges(Common.universe().edgesTaggedWithAll(XCSG.Call, CALL)).eval().edges()){
 					if(!callEdge.tags().contains(CALL)){
 						notInferredPerMethodCallEdges.add(callEdge);
+					}
+				}
+			}
+		}
+		
+		// import the statically resolved methods from CHA
+		AtlasSet<GraphElement> callEdges = Common.universe().edgesTaggedWithAny(XCSG.Call).eval().edges();
+		AtlasSet<GraphElement> reachableMethods = Common.universe().edgesTaggedWithAny(CALL).retainEdges().eval().nodes();
+		Q perControlFlowEdges = Common.universe().edgesTaggedWithAny(XCSG.ControlFlow_Edge);
+		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
+		for(GraphElement callEdge : callEdges){
+			// add static dispatches to the call graph
+			// includes called methods marked static and constructors
+			GraphElement calledMethod = callEdge.getNode(EdgeDirection.TO);
+			if(calledMethod.taggedWith(Node.IS_STATIC) || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
+				GraphElement callingMethod = callEdge.getNode(EdgeDirection.FROM);
+				if(reachableMethods.contains(callingMethod)){
+					callEdge.tag(CALL);
+					Q callsites = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.CallSite);
+					for(GraphElement perControlFlowEdge : perControlFlowEdges.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
+						perControlFlowEdge.tag(PER_CONTROL_FLOW);
 					}
 				}
 			}

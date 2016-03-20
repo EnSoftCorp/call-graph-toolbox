@@ -80,6 +80,8 @@ public class Stats {
 				+ "," + getMaxDynamicDispatchesPerCallsite(callsites, cga) 
 				+ "," + getMinDynamicDispatchesPerCallsite(callsites, cga) 
 				+ "," + getAverageDynamicDispatchesPerCallsite(callsites, cga) + "\n");
+		
+		fw.flush();
 	}
 
 	private static AtlasSet<GraphElement> getStaticDispatches(AtlasSet<GraphElement> callsites){
