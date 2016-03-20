@@ -73,7 +73,7 @@ public class Stats {
 				+ "," + callsites.size() + "," + getStaticDispatches(callsites).size() + "," + getDynamicDispatches(callsites).size()
 				+ "," + getMaxDynamicDispatchesPerCallsite(callsites, cga) 
 				+ "," + getMinDynamicDispatchesPerCallsite(callsites, cga) 
-				+ "," + getAverageDynamicDispatchesPerCallsite(callsites, cga) + "\n");
+				+ "," + decimalFormat.format(getAverageDynamicDispatchesPerCallsite(callsites, cga)) + "\n");
 		
 		fw.flush();
 	}
