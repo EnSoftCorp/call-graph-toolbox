@@ -9,7 +9,6 @@ import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.log.Log;
 import com.ensoftcorp.atlas.core.query.Attr.Edge;
-import com.ensoftcorp.atlas.core.query.Attr.Node;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
@@ -124,7 +123,8 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 			// add static dispatches to the call graph
 			// includes called methods marked static and constructors
 			GraphElement calledMethod = callEdge.getNode(EdgeDirection.TO);
-			if(calledMethod.taggedWith(Node.IS_STATIC) || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
+			boolean isStaticDispatch = Common.universe().edgesTaggedWithAny(PER_CONTROL_FLOW).predecessors(Common.toQ(calledMethod)).nodesTaggedWithAny(XCSG.StaticDispatchCallSite).eval().nodes().isEmpty();
+			if(isStaticDispatch || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
 				GraphElement callingMethod = callEdge.getNode(EdgeDirection.FROM);
 				if(reachableMethods.contains(callingMethod)){
 					callEdge.tag(CALL);
