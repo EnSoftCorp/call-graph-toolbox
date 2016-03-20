@@ -26,7 +26,7 @@ public class Stats {
 
 	public static void dumpStats(boolean enableCallGraphConstruction, File outputFile) throws IOException {
 		FileWriter fw = new FileWriter(outputFile);
-		fw.write("Algorithm,Time,Nodes,Edges,# Callsites,# Static Dispatches,# Dynamic Dispatches,Max Dynamic Dispatch Targets Per Callsite,Min Dynamic Dispatch Targets Per Callsite,Average Dynamic Dispatch Targets Per Callsite\n");
+		fw.write("Algorithm,Time,Nodes,Edges,# Callsites,# Static Dispatches,# Dynamic Dispatches,Min Dynamic Dispatch Targets Per Callsite,Max Dynamic Dispatch Targets Per Callsite,Average Dynamic Dispatch Targets Per Callsite\n");
 		
 		ReachabilityAnalysis ra = ReachabilityAnalysis.getInstance(enableCallGraphConstruction);
 		dumpStats(ra, fw);
