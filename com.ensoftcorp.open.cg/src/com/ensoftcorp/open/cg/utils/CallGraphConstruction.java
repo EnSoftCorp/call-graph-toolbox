@@ -16,8 +16,8 @@ public class CallGraphConstruction {
 	 * @param targetMethod
 	 * @return
 	 */
-	public static GraphElement createCallEdge(GraphElement method, GraphElement targetMethod, String relationship) {
-		return createRelationship(method, targetMethod, relationship, "call");
+	public static void createCallEdge(GraphElement callsite, GraphElement method, GraphElement targetMethod, String methodRelationship, String callsiteRelationship) {
+		createRelationship(callsite, method, targetMethod, methodRelationship, callsiteRelationship, "call");
 	}
 	
 	/**
@@ -27,20 +27,22 @@ public class CallGraphConstruction {
 	 * @param targetMethod
 	 * @return
 	 */
-	public static GraphElement createLibraryCallEdge(GraphElement method, GraphElement targetMethod, String relationship) {
-		return createRelationship(method, targetMethod, relationship, "library-call");
+	public static void createLibraryCallEdge(GraphElement callsite, GraphElement method, GraphElement targetMethod, String methodRelationship, String callsiteRelationship) {
+		createRelationship(callsite, method, targetMethod, methodRelationship, callsiteRelationship, "library-call");
 	}
 	
-	private static GraphElement createRelationship(GraphElement method, GraphElement targetMethod, String relationship, String displayName) {
-		Q callEdgesQ = Common.universe().edgesTaggedWithAny(relationship);
+	private static void createRelationship(GraphElement callsite, GraphElement method, GraphElement targetMethod, String methodRelationship, String callsiteRelationship, String displayName) {
+		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
+		GraphElement cfNode = declarations.predecessors(Common.toQ(callsite)).eval().nodes().getFirst();
+		Q callEdgesQ = Common.universe().edgesTaggedWithAny(methodRelationship);
 		AtlasSet<GraphElement> callEdges = callEdgesQ.betweenStep(Common.toQ(method), Common.toQ(targetMethod)).eval().edges();
 		if(callEdges.isEmpty()){
 			GraphElement callEdge = Graph.U.createEdge(method, targetMethod);
-			callEdge.tag(relationship);
+			callEdge.tag(methodRelationship);
 			callEdge.attr().put(XCSG.name, displayName);
-			return callEdge;
-		} else {
-			return callEdges.getFirst();
+			
+			GraphElement perCFEdge = Graph.U.createEdge(cfNode, targetMethod);
+			perCFEdge.tag(callsiteRelationship);
 		}
 	}
 	

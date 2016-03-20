@@ -33,6 +33,7 @@ import com.ensoftcorp.open.toolbox.commons.analysis.utils.StandardQueries;
 public class ClassicHybridTypeAnalysis extends CGAnalysis {
 
 	public static final String CALL = "CLASSIC-XTA-CALL";
+	public static final String PER_CONTROL_FLOW = "CLASSIC-PER-CONTROL-FLOW";
 
 	private static final String TYPES_SET = "CLASSIC-XTA-TYPES";
 	
@@ -224,9 +225,16 @@ public class ClassicHybridTypeAnalysis extends CGAnalysis {
 		
 		// just tag each edge in the XTA call graph with "XTA" to distinguish it
 		// from the CHA call graph
+		Q pcfCHA = cha.getPerControlFlowGraph();
 		for(GraphElement xtaEdge : cgXTA){
 			xtaEdge.tag(CALL);
-		}	
+			GraphElement callingMethod = xtaEdge.getNode(EdgeDirection.FROM);
+			GraphElement calledMethod = xtaEdge.getNode(EdgeDirection.TO);
+			Q controlFlowNodes = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
+			for(GraphElement perControlFlowEdge : pcfCHA.betweenStep(controlFlowNodes, Common.toQ(calledMethod)).eval().edges()){
+				perControlFlowEdge.tag(PER_CONTROL_FLOW);
+			}
+		}		
 	}
 	
 	/**
@@ -250,6 +258,11 @@ public class ClassicHybridTypeAnalysis extends CGAnalysis {
 	@Override
 	public String[] getCallEdgeTags() {
 		return new String[]{CALL, ClassHierarchyAnalysis.LIBRARY_CALL};
+	}
+
+	@Override
+	public String[] getPerControlFlowEdgeTags() {
+		return new String[]{PER_CONTROL_FLOW, ClassHierarchyAnalysis.PER_CONTROL_FLOW};
 	}
 	
 }

@@ -32,6 +32,7 @@ import com.ensoftcorp.open.toolbox.commons.analysis.utils.StandardQueries;
 public class FieldTypeAnalysis extends CGAnalysis {
 
 	public static final String CALL = "FTA-CALL";
+	public static final String PER_CONTROL_FLOW = "FTA-PER-CONTROL-FLOW";
 
 	private static final String TYPES_SET = "FTA-TYPES";
 	
@@ -207,8 +208,15 @@ public class FieldTypeAnalysis extends CGAnalysis {
 		
 		// just tag each edge in the FTA call graph with "FTA" to distinguish it
 		// from the CHA call graph
-		for(GraphElement ftaEdge : cgFTA){
-			ftaEdge.tag(CALL);
+		Q pcfCHA = cha.getPerControlFlowGraph();
+		for(GraphElement etaEdge : cgFTA){
+			etaEdge.tag(CALL);
+			GraphElement callingMethod = etaEdge.getNode(EdgeDirection.FROM);
+			GraphElement calledMethod = etaEdge.getNode(EdgeDirection.TO);
+			Q controlFlowNodes = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
+			for(GraphElement perControlFlowEdge : pcfCHA.betweenStep(controlFlowNodes, Common.toQ(calledMethod)).eval().edges()){
+				perControlFlowEdge.tag(PER_CONTROL_FLOW);
+			}
 		}	
 	}
 	
@@ -235,4 +243,8 @@ public class FieldTypeAnalysis extends CGAnalysis {
 		return new String[]{CALL, ClassHierarchyAnalysis.LIBRARY_CALL};
 	}
 	
+	@Override
+	public String[] getPerControlFlowEdgeTags() {
+		return new String[]{PER_CONTROL_FLOW, ClassHierarchyAnalysis.PER_CONTROL_FLOW};
+	}
 }

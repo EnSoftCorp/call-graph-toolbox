@@ -27,7 +27,9 @@ import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
 public class ReachabilityAnalysis extends CGAnalysis {
 
 	public static final String CALL = "RA-CALL"; 
+	public static final String PER_CONTROL_FLOW = "RA-PER-CONTROL-FLOW"; 
 	public static final String LIBRARY_CALL = "RA-LIBRARY-CALL";
+	public static final String LIBRARY_PER_CONTROL_FLOW = "RA-LIBRARY-PER-CONTROL-FLOW"; 
 	
 	private static ReachabilityAnalysis instance = null;
 	private static CodeMapChangeListener codeMapChangeListener = null;
@@ -66,7 +68,7 @@ public class ReachabilityAnalysis extends CGAnalysis {
 				if(callsite.taggedWith(XCSG.StaticDispatchCallSite)){
 					// static dispatches (calls to constructors or methods marked as static) can be resolved immediately
 					GraphElement targetMethod = invokedFunctionEdges.successors(Common.toQ(callsite)).eval().nodes().getFirst();
-					CallGraphConstruction.createCallEdge(method, targetMethod, CALL);
+					CallGraphConstruction.createCallEdge(callsite, method, targetMethod, CALL, PER_CONTROL_FLOW);
 				} else if(callsite.taggedWith(XCSG.DynamicDispatchCallSite)){
 					// dynamic dispatches require additional analysis to be resolved
 					
@@ -82,10 +84,10 @@ public class ReachabilityAnalysis extends CGAnalysis {
 								// in the case that the method signature was abstract since we may not have been able to resolve any
 								// dispatch targets (in the case the method is not implemented in the library) and since we cannot know 
 								// that the application won't re-implement the method anyway (unless it was marked final)
-								CallGraphConstruction.createLibraryCallEdge(method, reachableMethod, LIBRARY_CALL);
+								CallGraphConstruction.createCallEdge(callsite, method, reachableMethod, LIBRARY_CALL, LIBRARY_PER_CONTROL_FLOW);
 							}
 						} else {
-							CallGraphConstruction.createCallEdge(method, reachableMethod, CALL);
+							CallGraphConstruction.createCallEdge(callsite, method, reachableMethod, CALL, PER_CONTROL_FLOW);
 						}
 					}
 				}
@@ -162,5 +164,10 @@ public class ReachabilityAnalysis extends CGAnalysis {
 	@Override
 	public String[] getCallEdgeTags() {
 		return new String[]{CALL, LIBRARY_CALL};
+	}
+	
+	@Override
+	public String[] getPerControlFlowEdgeTags() {
+		return new String[]{PER_CONTROL_FLOW, LIBRARY_PER_CONTROL_FLOW};
 	}
 }

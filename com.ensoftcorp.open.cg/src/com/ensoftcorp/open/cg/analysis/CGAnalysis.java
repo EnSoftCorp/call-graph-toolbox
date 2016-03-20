@@ -40,6 +40,24 @@ public abstract class CGAnalysis {
 	public abstract String[] getCallEdgeTags();
 	
 	/**
+	 * Returns the call graph produced by the algorithm
+	 * @return
+	 */
+	public Q getPerControlFlowGraph(){
+		if(!hasRun()){
+			run();
+		}
+		return Common.universe().edgesTaggedWithAny(getPerControlFlowEdgeTags());
+	}
+	
+	/**
+	 * Returns the set of tags applied to per control flow edges during call graph construction
+	 * @return
+	 */
+	public abstract String[] getPerControlFlowEdgeTags();
+
+	
+	/**
 	 * Returns true if the call graph construction has completed
 	 * @return
 	 */

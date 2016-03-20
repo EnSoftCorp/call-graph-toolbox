@@ -10,6 +10,7 @@ import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.log.Log;
 import com.ensoftcorp.atlas.core.query.Attr.Edge;
+import com.ensoftcorp.atlas.core.query.Attr.Node;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
@@ -34,6 +35,7 @@ import com.ensoftcorp.open.pointsto.ui.PointsToPreferences;
 public class ZeroControlFlowAnalysis extends CGAnalysis {
 
 	public static final String CALL = "0-CFA-CALL";
+	public static final String PER_CONTROL_FLOW = "0-CFA-PER-CONTROL-FLOW";
 	
 	private static ZeroControlFlowAnalysis instance = null;
 	private static CodeMapChangeListener codeMapChangeListener = null;
@@ -74,6 +76,25 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 				}
 			}
 		}
+		
+		// import the statically resolved methods from CHA
+		AtlasSet<GraphElement> callEdges = Common.universe().edgesTaggedWithAny(XCSG.Call).eval().edges();
+		Q perControlFlowEdges = Common.universe().edgesTaggedWithAny(XCSG.ControlFlow_Edge);
+		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
+		for(GraphElement callEdge : callEdges){
+			// add static dispatches to the call graph
+			// includes called methods marked static and constructors
+			GraphElement calledMethod = callEdge.getNode(EdgeDirection.TO);
+			if(calledMethod.taggedWith(Node.IS_STATIC) || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
+				callEdge.tag(CALL);
+				
+				GraphElement callingMethod = callEdge.getNode(EdgeDirection.FROM);
+				Q controlFlowNodes = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
+				for(GraphElement perControlFlowEdge : perControlFlowEdges.betweenStep(controlFlowNodes, Common.toQ(calledMethod)).eval().edges()){
+					perControlFlowEdge.tag(PER_CONTROL_FLOW);
+				}
+			}
+		}
 
 		// the points-to analysis just infers data flow edges
 		// but the call edges are really just a summary of the 
@@ -96,13 +117,13 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 				Q identity = Common.toQ(dfInterprocInvokeEdge.getNode(EdgeDirection.TO));
 				Q target = Common.universe().edgesTaggedWithAny(XCSG.Contains).predecessors(identity);
 				// infer per control flow call summary edges
-				for(GraphElement callEdge : Common.universe().edgesTaggedWithAll(Edge.CALL, Edge.PER_CONTROL_FLOW).betweenStep(callsite, target).eval().edges()){
-					callEdge.tag(CALL);
-					notInferredPerControlFlowCallEdges.remove(callEdge); // remove the edge if it was previously thought to have been not inferred
+				for(GraphElement perControlFlowEdge : Common.universe().edgesTaggedWithAll(Edge.CALL, Edge.PER_CONTROL_FLOW).betweenStep(callsite, target).eval().edges()){
+					perControlFlowEdge.tag(PER_CONTROL_FLOW);
+					notInferredPerControlFlowCallEdges.remove(perControlFlowEdge); // remove the edge if it was previously thought to have been not inferred
 				}
 				for(GraphElement callEdge : Common.universe().edgesTaggedWithAny(Edge.CALL, Edge.PER_CONTROL_FLOW).forwardStep(callsite)
 						.differenceEdges(Common.universe().edgesTaggedWithAll(Edge.CALL, Edge.PER_CONTROL_FLOW, CALL)).eval().edges()){
-					if(!callEdge.tags().contains(CALL)){
+					if(!callEdge.tags().contains(PER_CONTROL_FLOW)){
 						notInferredPerControlFlowCallEdges.add(callEdge);
 					}
 				}
@@ -125,6 +146,11 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 	@Override
 	public String[] getCallEdgeTags() {
 		return new String[]{CALL, ClassHierarchyAnalysis.LIBRARY_CALL};
+	}
+	
+	@Override
+	public String[] getPerControlFlowEdgeTags() {
+		return new String[]{PER_CONTROL_FLOW, ClassHierarchyAnalysis.LIBRARY_PER_CONTROL_FLOW};
 	}
 
 }

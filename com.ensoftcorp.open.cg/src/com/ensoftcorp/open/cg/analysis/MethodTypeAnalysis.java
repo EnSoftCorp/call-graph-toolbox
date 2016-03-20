@@ -32,6 +32,7 @@ import com.ensoftcorp.open.toolbox.commons.analysis.DiscoverMainMethods;
 public class MethodTypeAnalysis extends CGAnalysis {
 
 	public static final String CALL = "MTA-CALL";
+	public static final String PER_CONTROL_FLOW = "MTA-PER-CONTROL-FLOW";
 	
 	private static final String TYPES_SET = "MTA-TYPES";
 	
@@ -181,8 +182,15 @@ public class MethodTypeAnalysis extends CGAnalysis {
 		
 		// just tag each edge in the MTA call graph with "MTA" to distinguish it
 		// from the CHA call graph
+		Q pcfCHA = cha.getPerControlFlowGraph();
 		for(GraphElement mtaEdge : cgMTA){
 			mtaEdge.tag(CALL);
+			GraphElement callingMethod = mtaEdge.getNode(EdgeDirection.FROM);
+			GraphElement calledMethod = mtaEdge.getNode(EdgeDirection.TO);
+			Q controlFlowNodes = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
+			for(GraphElement perControlFlowEdge : pcfCHA.betweenStep(controlFlowNodes, Common.toQ(calledMethod)).eval().edges()){
+				perControlFlowEdge.tag(PER_CONTROL_FLOW);
+			}
 		}	
 	}
 	
@@ -209,4 +217,8 @@ public class MethodTypeAnalysis extends CGAnalysis {
 		return new String[]{CALL, ClassHierarchyAnalysis.LIBRARY_CALL};
 	}
 	
+	@Override
+	public String[] getPerControlFlowEdgeTags() {
+		return new String[]{PER_CONTROL_FLOW, ClassHierarchyAnalysis.PER_CONTROL_FLOW};
+	}
 }

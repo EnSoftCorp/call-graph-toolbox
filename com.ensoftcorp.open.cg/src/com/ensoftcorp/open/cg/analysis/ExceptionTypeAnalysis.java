@@ -30,6 +30,7 @@ import com.ensoftcorp.open.toolbox.commons.analysis.DiscoverMainMethods;
 public class ExceptionTypeAnalysis extends CGAnalysis {
 
 	public static final String CALL = "ETA-CALL";
+	public static final String PER_CONTROL_FLOW = "ETA-PER-CONTROL-FLOW";
 	
 	private static final String TYPES_SET = "ETA-TYPES";
 	
@@ -186,8 +187,15 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 		
 		// just tag each edge in the ETA call graph with "ETA" to distinguish it
 		// from the CHA call graph
-		for(GraphElement etaEdge : cgETA){
-			etaEdge.tag(CALL);
+		Q pcfCHA = cha.getPerControlFlowGraph();
+		for(GraphElement xtaEdge : cgETA){
+			xtaEdge.tag(CALL);
+			GraphElement callingMethod = xtaEdge.getNode(EdgeDirection.FROM);
+			GraphElement calledMethod = xtaEdge.getNode(EdgeDirection.TO);
+			Q controlFlowNodes = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
+			for(GraphElement perControlFlowEdge : pcfCHA.betweenStep(controlFlowNodes, Common.toQ(calledMethod)).eval().edges()){
+				perControlFlowEdge.tag(PER_CONTROL_FLOW);
+			}
 		}	
 	}
 	
@@ -212,6 +220,11 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 	@Override
 	public String[] getCallEdgeTags() {
 		return new String[]{CALL, ClassHierarchyAnalysis.LIBRARY_CALL};
+	}
+	
+	@Override
+	public String[] getPerControlFlowEdgeTags() {
+		return new String[]{PER_CONTROL_FLOW, ClassHierarchyAnalysis.PER_CONTROL_FLOW};
 	}
 	
 }

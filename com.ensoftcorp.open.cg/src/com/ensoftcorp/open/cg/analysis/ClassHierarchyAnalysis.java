@@ -27,7 +27,9 @@ import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
 public class ClassHierarchyAnalysis extends CGAnalysis {
 
 	public static final String CALL = "CHA-CALL"; 
+	public static final String PER_CONTROL_FLOW = "CHA-PER-CONTROL-FLOW"; 
 	public static final String LIBRARY_CALL = "CHA-LIBRARY-CALL";
+	public static final String LIBRARY_PER_CONTROL_FLOW = "CHA-LIBRARY-PER-CONTROL-FLOW"; 
 	
 	private static ClassHierarchyAnalysis instance = null;
 	private static CodeMapChangeListener codeMapChangeListener = null;
@@ -69,7 +71,7 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 				if(callsite.taggedWith(XCSG.StaticDispatchCallSite)){
 					// static dispatches (calls to constructors or methods marked as static) can be resolved immediately
 					GraphElement targetMethod = invokedFunctionEdges.successors(Common.toQ(callsite)).eval().nodes().getFirst();
-					CallGraphConstruction.createCallEdge(method, targetMethod, CALL);
+					CallGraphConstruction.createCallEdge(callsite, method, targetMethod, CALL, PER_CONTROL_FLOW);
 				} else if(callsite.taggedWith(XCSG.DynamicDispatchCallSite)){
 					// dynamic dispatches require additional analysis to be resolved
 
@@ -117,7 +119,7 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 					
 					// add a call edge to each resolved concrete dispatch
 					for(GraphElement resolvedDispatch : resolvedDispatches.eval().nodes()){
-						CallGraphConstruction.createCallEdge(method, resolvedDispatch, CALL);
+						CallGraphConstruction.createCallEdge(callsite, method, resolvedDispatch, CALL, PER_CONTROL_FLOW);
 					}
 					
 					// if library call graph construction is enabled then we will consider adding a special edge type
@@ -127,7 +129,7 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 					// about that at this time
 					if(libraryCallGraphConstructionEnabled){
 						if(methodSignature.taggedWith(XCSG.abstractMethod)){
-							CallGraphConstruction.createLibraryCallEdge(method, methodSignature, LIBRARY_CALL);
+							CallGraphConstruction.createCallEdge(callsite, method, methodSignature, LIBRARY_CALL, LIBRARY_PER_CONTROL_FLOW);
 						}
 					}
 				}
@@ -138,6 +140,11 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 	@Override
 	public String[] getCallEdgeTags() {
 		return new String[]{CALL, LIBRARY_CALL};
+	}
+	
+	@Override
+	public String[] getPerControlFlowEdgeTags() {
+		return new String[]{PER_CONTROL_FLOW, LIBRARY_PER_CONTROL_FLOW};
 	}
 
 }

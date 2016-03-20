@@ -28,6 +28,7 @@ import com.ensoftcorp.open.toolbox.commons.analysis.DiscoverMainMethods;
 public class RapidTypeAnalysis extends CGAnalysis {
 
 	public static final String CALL = "RTA-CALL";
+	public static final String PER_CONTROL_FLOW = "RTA-PER-CONTROL-FLOW";
 	
 	private static final String TYPES_SET = "RTA-TYPES";
 	
@@ -161,9 +162,16 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		
 		// just tag each edge in the RTA call graph with "RTA" to distinguish it
 		// from the CHA call graph
+		Q pcfCHA = cha.getPerControlFlowGraph();
 		for(GraphElement rtaEdge : cgRTA){
 			rtaEdge.tag(CALL);
-		}	
+			GraphElement callingMethod = rtaEdge.getNode(EdgeDirection.FROM);
+			GraphElement calledMethod = rtaEdge.getNode(EdgeDirection.TO);
+			Q controlFlowNodes = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
+			for(GraphElement perControlFlowEdge : pcfCHA.betweenStep(controlFlowNodes, Common.toQ(calledMethod)).eval().edges()){
+				perControlFlowEdge.tag(PER_CONTROL_FLOW);
+			}
+		}
 	}
 	
 	/**
@@ -187,6 +195,11 @@ public class RapidTypeAnalysis extends CGAnalysis {
 	@Override
 	public String[] getCallEdgeTags() {
 		return new String[]{CALL, ClassHierarchyAnalysis.LIBRARY_CALL};
+	}
+
+	@Override
+	public String[] getPerControlFlowEdgeTags() {
+		return new String[]{PER_CONTROL_FLOW, ClassHierarchyAnalysis.PER_CONTROL_FLOW};
 	}
 	
 }

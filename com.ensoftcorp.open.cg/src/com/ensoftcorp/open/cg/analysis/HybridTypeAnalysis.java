@@ -14,6 +14,7 @@ import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.atlas.java.core.script.CommonQueries;
 import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
+import com.ensoftcorp.open.cg.utils.ExceptionAnalysis;
 import com.ensoftcorp.open.toolbox.commons.analysis.DiscoverMainMethods;
 import com.ensoftcorp.open.toolbox.commons.analysis.utils.StandardQueries;
 
@@ -33,6 +34,7 @@ import com.ensoftcorp.open.toolbox.commons.analysis.utils.StandardQueries;
 public class HybridTypeAnalysis extends CGAnalysis {
 
 	public static final String CALL = "XTA-CALL";
+	public static final String PER_CONTROL_FLOW = "XTA-PER-CONTROL-FLOW";
 
 	private static final String TYPES_SET = "XTA-TYPES";
 	
@@ -172,6 +174,28 @@ public class HybridTypeAnalysis extends CGAnalysis {
 					}
 				}
 
+				// from ETA we should inherit all allocation types from methods and their parents that 
+				// throw an exception that could be caught by this method
+				Q potentialCatchBlocks = declarations.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
+				Q throwingMethods = declarations.reverse(ExceptionAnalysis.findThrowForCatch(potentialCatchBlocks)).nodesTaggedWithAny(XCSG.Method);
+				throwingMethods = throwingMethods.difference(Common.toQ(method)); // only worried about exceptions that propagate back up the stack
+				for(GraphElement throwingMethod : throwingMethods.eval().nodes()){
+					Q parentAllocationTypes = Common.toQ(getAllocationTypesSet(throwingMethod));
+					// add the parameter type compatible allocation types
+					allocationTypes.addAll(parentAllocationTypes.eval().nodes());
+				}
+				
+				// finally if this method throws an exception we should propagate those types to all
+				// methods that could potentially catch it
+				Q potentialThrowBlocks = declarations.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
+				Q catchingMethods = declarations.reverse(ExceptionAnalysis.findCatchForThrows(potentialThrowBlocks)).nodesTaggedWithAny(XCSG.Method);
+				catchingMethods = catchingMethods.difference(Common.toQ(method)); // only worried about exceptions that propagate back up the stack
+				for(GraphElement catchingMethod : catchingMethods.eval().nodes()){
+					if(getAllocationTypesSet(catchingMethod).addAll(allocationTypes)){
+						worklist.add(catchingMethod);
+					}
+				}
+				
 				// next get a set of all the CHA call edges from the method and create an XTA edge
 				// from the method to the target method in the CHA call graph if the target methods
 				// type is compatible with the feasibly allocated types that would reach this method
@@ -224,8 +248,15 @@ public class HybridTypeAnalysis extends CGAnalysis {
 		
 		// just tag each edge in the XTA call graph with "XTA" to distinguish it
 		// from the CHA call graph
+		Q pcfCHA = cha.getPerControlFlowGraph();
 		for(GraphElement xtaEdge : cgXTA){
 			xtaEdge.tag(CALL);
+			GraphElement callingMethod = xtaEdge.getNode(EdgeDirection.FROM);
+			GraphElement calledMethod = xtaEdge.getNode(EdgeDirection.TO);
+			Q controlFlowNodes = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
+			for(GraphElement perControlFlowEdge : pcfCHA.betweenStep(controlFlowNodes, Common.toQ(calledMethod)).eval().edges()){
+				perControlFlowEdge.tag(PER_CONTROL_FLOW);
+			}
 		}	
 	}
 	
@@ -250,6 +281,11 @@ public class HybridTypeAnalysis extends CGAnalysis {
 	@Override
 	public String[] getCallEdgeTags() {
 		return new String[]{CALL, ClassHierarchyAnalysis.LIBRARY_CALL};
+	}
+	
+	@Override
+	public String[] getPerControlFlowEdgeTags() {
+		return new String[]{PER_CONTROL_FLOW, ClassHierarchyAnalysis.PER_CONTROL_FLOW};
 	}
 	
 }
