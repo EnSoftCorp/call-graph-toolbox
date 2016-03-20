@@ -16,7 +16,6 @@ import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
 import com.ensoftcorp.open.pointsto.common.PointsToResults;
-import com.ensoftcorp.open.pointsto.ui.PointsToPreferences;
 
 /**
  * Performs a 0-CFA Andersen style points-to analysis
@@ -60,7 +59,13 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 	
 	@Override
 	protected void runAnalysis() {
-		if(!PointsToPreferences.isJimplePointsToAnalysisEnabled()){
+		// class loader issues are preventing us from calling this directly
+//		if(!PointsToPreferences.isJimplePointsToAnalysisEnabled()){
+//			throw new RuntimeException("Points-to analysis has not been run!");
+//		}
+		
+		// so just looking for know tags instead...
+		if(!Common.universe().edgesTaggedWithAny("INFERRED").eval().edges().isEmpty()){
 			throw new RuntimeException("Points-to analysis has not been run!");
 		}
 		

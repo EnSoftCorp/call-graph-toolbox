@@ -20,15 +20,12 @@ import com.ensoftcorp.open.cg.analysis.MethodTypeAnalysis;
 import com.ensoftcorp.open.cg.analysis.RapidTypeAnalysis;
 import com.ensoftcorp.open.cg.analysis.ReachabilityAnalysis;
 import com.ensoftcorp.open.cg.analysis.ZeroControlFlowAnalysis;
-import com.ensoftcorp.open.cg.ui.CallGraphPreferences;
 
 public class Stats {
 
-	public static void dumpStats(File outputFile) throws IOException {
+	public static void dumpStats(boolean enableCallGraphConstruction, File outputFile) throws IOException {
 		FileWriter fw = new FileWriter(outputFile);
 		fw.write("Algorithm,Nodes,Edges,# Callsites,# Static Dispatches,# Dynamic Dispatches,Max Dynamic Dispatch Targets Per Callsite,Min Dynamic Dispatch Targets Per Callsite,Average Dynamic Dispatch Targets Per Callsite\n");
-		
-		boolean enableCallGraphConstruction = CallGraphPreferences.isLibraryCallGraphConstructionEnabled();
 		
 		ReachabilityAnalysis ra = ReachabilityAnalysis.getInstance(enableCallGraphConstruction);
 		dumpStats(ra, fw);
