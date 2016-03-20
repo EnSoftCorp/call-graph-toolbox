@@ -102,17 +102,17 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 				Q callsite = Common.universe().edgesTaggedWithAny(XCSG.Contains).predecessors(identityPass);
 				Q identity = Common.toQ(dfInterprocInvokeEdge.getNode(EdgeDirection.TO));
 				Q target = Common.universe().edgesTaggedWithAny(XCSG.Contains).predecessors(identity);
-				// infer per control flow call summary edges
-				for(GraphElement perControlFlowEdge : Common.universe().edgesTaggedWithAll(Edge.CALL, Edge.PER_CONTROL_FLOW).betweenStep(callsite, target).eval().edges()){
-					perControlFlowEdge.tag(PER_CONTROL_FLOW);
-					notInferredPerControlFlowCallEdges.remove(perControlFlowEdge); // remove the edge if it was previously thought to have been not inferred
-				}
-				for(GraphElement callEdge : Common.universe().edgesTaggedWithAny(Edge.CALL, Edge.PER_CONTROL_FLOW).forwardStep(callsite)
-						.differenceEdges(Common.universe().edgesTaggedWithAll(Edge.CALL, Edge.PER_CONTROL_FLOW, CALL)).eval().edges()){
-					if(!callEdge.tags().contains(PER_CONTROL_FLOW)){
-						notInferredPerControlFlowCallEdges.add(callEdge);
-					}
-				}
+//				// infer per control flow call summary edges
+//				for(GraphElement perControlFlowEdge : Common.universe().edgesTaggedWithAll(Edge.CALL, Edge.PER_CONTROL_FLOW).betweenStep(callsite, target).eval().edges()){
+//					perControlFlowEdge.tag(PER_CONTROL_FLOW);
+//					notInferredPerControlFlowCallEdges.remove(perControlFlowEdge); // remove the edge if it was previously thought to have been not inferred
+//				}
+//				for(GraphElement callEdge : Common.universe().edgesTaggedWithAny(Edge.CALL, Edge.PER_CONTROL_FLOW).forwardStep(callsite)
+//						.differenceEdges(Common.universe().edgesTaggedWithAll(Edge.CALL, Edge.PER_CONTROL_FLOW, CALL)).eval().edges()){
+//					if(!callEdge.tags().contains(PER_CONTROL_FLOW)){
+//						notInferredPerControlFlowCallEdges.add(callEdge);
+//					}
+//				}
 				// infer per method call summary edges
 				Q caller = Common.universe().edgesTaggedWithAny(XCSG.Contains).predecessors(callsite);
 				for(GraphElement callEdge : Common.universe().edgesTaggedWithAll(XCSG.Call).betweenStep(caller, target).eval().edges()){

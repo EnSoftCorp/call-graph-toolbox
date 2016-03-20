@@ -285,7 +285,7 @@ public class HybridTypeAnalysis extends CGAnalysis {
 	
 	@Override
 	public String[] getPerControlFlowEdgeTags() {
-		return new String[]{PER_CONTROL_FLOW, ClassHierarchyAnalysis.PER_CONTROL_FLOW};
+		return new String[]{PER_CONTROL_FLOW, ClassHierarchyAnalysis.LIBRARY_PER_CONTROL_FLOW};
 	}
 	
 	@Override
