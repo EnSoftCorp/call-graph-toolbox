@@ -123,9 +123,11 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 			// add static dispatches to the call graph
 			// includes called methods marked static and constructors
 			GraphElement calledMethod = callEdge.getNode(EdgeDirection.TO);
-			boolean isStaticDispatch = !Common.universe().edgesTaggedWithAny(PER_CONTROL_FLOW).predecessors(Common.toQ(calledMethod)).nodesTaggedWithAny(XCSG.StaticDispatchCallSite).eval().nodes().isEmpty();
+			GraphElement callingMethod = callEdge.getNode(EdgeDirection.FROM);
+			Q callingStaticDispatches = Common.toQ(callingMethod).contained().nodesTaggedWithAny(XCSG.StaticDispatchCallSite);
+			boolean isStaticDispatch = !Common.universe().edgesTaggedWithAny(PER_CONTROL_FLOW).predecessors(Common.toQ(calledMethod))
+					.intersection(callingStaticDispatches).eval().nodes().isEmpty();
 			if(isStaticDispatch || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
-				GraphElement callingMethod = callEdge.getNode(EdgeDirection.FROM);
 				if(reachableMethods.contains(callingMethod)){
 					callEdge.tag(CALL);
 					Q callsites = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.CallSite);
