@@ -230,8 +230,8 @@ public class ClassicHybridTypeAnalysis extends CGAnalysis {
 			xtaEdge.tag(CALL);
 			GraphElement callingMethod = xtaEdge.getNode(EdgeDirection.FROM);
 			GraphElement calledMethod = xtaEdge.getNode(EdgeDirection.TO);
-			Q controlFlowNodes = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
-			for(GraphElement perControlFlowEdge : pcfCHA.betweenStep(controlFlowNodes, Common.toQ(calledMethod)).eval().edges()){
+			Q callsites = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.CallSite);
+			for(GraphElement perControlFlowEdge : pcfCHA.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
 				perControlFlowEdge.tag(PER_CONTROL_FLOW);
 			}
 		}		

@@ -32,8 +32,6 @@ public class CallGraphConstruction {
 	}
 	
 	private static void createRelationship(GraphElement callsite, GraphElement method, GraphElement targetMethod, String methodRelationship, String callsiteRelationship, String displayName) {
-		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
-		GraphElement cfNode = declarations.predecessors(Common.toQ(callsite)).eval().nodes().getFirst();
 		Q callEdgesQ = Common.universe().edgesTaggedWithAny(methodRelationship);
 		AtlasSet<GraphElement> callEdges = callEdgesQ.betweenStep(Common.toQ(method), Common.toQ(targetMethod)).eval().edges();
 		if(callEdges.isEmpty()){
@@ -41,7 +39,7 @@ public class CallGraphConstruction {
 			callEdge.tag(methodRelationship);
 			callEdge.attr().put(XCSG.name, displayName);
 			
-			GraphElement perCFEdge = Graph.U.createEdge(cfNode, targetMethod);
+			GraphElement perCFEdge = Graph.U.createEdge(callsite, targetMethod);
 			perCFEdge.tag(callsiteRelationship);
 		}
 	}

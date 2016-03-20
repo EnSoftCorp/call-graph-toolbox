@@ -89,8 +89,8 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 				callEdge.tag(CALL);
 				
 				GraphElement callingMethod = callEdge.getNode(EdgeDirection.FROM);
-				Q controlFlowNodes = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
-				for(GraphElement perControlFlowEdge : perControlFlowEdges.betweenStep(controlFlowNodes, Common.toQ(calledMethod)).eval().edges()){
+				Q callsites = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.CallSite);
+				for(GraphElement perControlFlowEdge : perControlFlowEdges.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
 					perControlFlowEdge.tag(PER_CONTROL_FLOW);
 				}
 			}

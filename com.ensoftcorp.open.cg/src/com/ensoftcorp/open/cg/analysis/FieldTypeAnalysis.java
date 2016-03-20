@@ -213,8 +213,8 @@ public class FieldTypeAnalysis extends CGAnalysis {
 			etaEdge.tag(CALL);
 			GraphElement callingMethod = etaEdge.getNode(EdgeDirection.FROM);
 			GraphElement calledMethod = etaEdge.getNode(EdgeDirection.TO);
-			Q controlFlowNodes = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
-			for(GraphElement perControlFlowEdge : pcfCHA.betweenStep(controlFlowNodes, Common.toQ(calledMethod)).eval().edges()){
+			Q callsites = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.CallSite);
+			for(GraphElement perControlFlowEdge : pcfCHA.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
 				perControlFlowEdge.tag(PER_CONTROL_FLOW);
 			}
 		}	
