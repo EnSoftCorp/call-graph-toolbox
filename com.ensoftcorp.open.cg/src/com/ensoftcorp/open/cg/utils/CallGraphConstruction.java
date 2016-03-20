@@ -38,7 +38,11 @@ public class CallGraphConstruction {
 			GraphElement callEdge = Graph.U.createEdge(method, targetMethod);
 			callEdge.tag(methodRelationship);
 			callEdge.attr().put(XCSG.name, displayName);
-			
+		}
+		
+		Q perControlFlowEdgesQ = Common.universe().edgesTaggedWithAny(callsiteRelationship);
+		AtlasSet<GraphElement> perControlFlowEdges = perControlFlowEdgesQ.betweenStep(Common.toQ(callsite), Common.toQ(targetMethod)).eval().edges();
+		if(perControlFlowEdges.isEmpty()){
 			GraphElement perCFEdge = Graph.U.createEdge(callsite, targetMethod);
 			perCFEdge.tag(callsiteRelationship);
 		}
