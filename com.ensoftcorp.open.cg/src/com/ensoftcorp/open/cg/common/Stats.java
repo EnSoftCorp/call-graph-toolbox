@@ -3,6 +3,7 @@ package com.ensoftcorp.open.cg.common;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DecimalFormat;
 
 import com.ensoftcorp.atlas.core.db.graph.Graph;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement;
@@ -28,53 +29,46 @@ public class Stats {
 		fw.write("Algorithm,Nodes,Edges,# Callsites,# Static Dispatches,# Dynamic Dispatches,Max Dynamic Dispatch Targets Per Callsite,Min Dynamic Dispatch Targets Per Callsite,Average Dynamic Dispatch Targets Per Callsite\n");
 		
 		ReachabilityAnalysis ra = ReachabilityAnalysis.getInstance(enableCallGraphConstruction);
-		ra.run();
 		dumpStats(ra, fw);
 		
 		ClassHierarchyAnalysis cha = ClassHierarchyAnalysis.getInstance(enableCallGraphConstruction);
-		cha.run();
 		dumpStats(cha, fw);
 		
 		RapidTypeAnalysis rta = RapidTypeAnalysis.getInstance(enableCallGraphConstruction);
-		rta.run();
 		dumpStats(rta, fw);
 		
 		FieldTypeAnalysis fta = FieldTypeAnalysis.getInstance(enableCallGraphConstruction);
-		fta.run();
 		dumpStats(fta, fw);
 		
 		MethodTypeAnalysis mta = MethodTypeAnalysis.getInstance(enableCallGraphConstruction);
-		mta.run();
 		dumpStats(mta, fw);
 		
 		ExceptionTypeAnalysis eta = ExceptionTypeAnalysis.getInstance(enableCallGraphConstruction);
-		eta.run();
 		dumpStats(eta, fw);
 		
 		ClassicHybridTypeAnalysis cxta = ClassicHybridTypeAnalysis.getInstance(enableCallGraphConstruction);
-		cxta.run();
 		dumpStats(cxta, fw);
 		
 		HybridTypeAnalysis xta = HybridTypeAnalysis.getInstance(enableCallGraphConstruction);
-		xta.run();
 		dumpStats(xta, fw);
 		
 		ZeroControlFlowAnalysis zcfa = ZeroControlFlowAnalysis.getInstance(enableCallGraphConstruction);
-		zcfa.run();
 		dumpStats(zcfa, fw);
 		
 		fw.close();
 	}
 	
 	// how many nodes/edges in call graph 
-	// number of virtual callsites (list their locations)
+	// number of virtual callsites
 	// max/average/min number of callees linked to each virtual call site
 	private static void dumpStats(CGAnalysis cga, FileWriter fw) throws IOException {
+		double time = cga.run();
 		Q cg = cga.getCallGraph();
 		Graph cgGraph = cg.eval();
 		AtlasSet<GraphElement> callsites = Common.universe().nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
 		
-		fw.write(cga.getClass().getSimpleName()
+		DecimalFormat decimalFormat = new DecimalFormat("#.##");
+		fw.write(cga.getClass().getSimpleName() + "," + decimalFormat.format(time)
 				+ "," + cgGraph.nodes().size() + "," + cgGraph.edges().size() 
 				+ "," + callsites.size() + "," + getStaticDispatches(callsites).size() + "," + getDynamicDispatches(callsites).size()
 				+ "," + getMaxDynamicDispatchesPerCallsite(callsites, cga) 
