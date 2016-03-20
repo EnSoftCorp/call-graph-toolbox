@@ -5,7 +5,6 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import com.ensoftcorp.atlas.core.db.graph.Graph;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
-import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.log.Log;
@@ -90,40 +89,28 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 		
 		IProgressMonitor m = new org.eclipse.core.runtime.NullProgressMonitor();
 		
-		// for each interprocedural invocation data flow edges (ignoring the assignment data flow edges)
-		AtlasSet<GraphElement> notInferredPerControlFlowCallEdges = new AtlasHashSet<GraphElement>();
-		AtlasSet<GraphElement> notInferredPerMethodCallEdges = new AtlasHashSet<GraphElement>();
-		
 		AtlasSet<GraphElement> dfInterprocInvokeEdges = Common.resolve(m, Common.universe().edgesTaggedWithAny(XCSG.DataFlow_Edge)).eval().edges();
 		for(GraphElement dfInterprocInvokeEdge : dfInterprocInvokeEdges){
 			if(dfGraph.edges().contains(dfInterprocInvokeEdge)) {
 				// tag the inferred call summary, keep track of the edges that were not inferred
 				Q identityPass = Common.toQ(dfInterprocInvokeEdge.getNode(EdgeDirection.FROM));
-				Q callsite = Common.universe().edgesTaggedWithAny(XCSG.Contains).predecessors(identityPass);
+				Q callsiteCFNode = Common.universe().edgesTaggedWithAny(XCSG.Contains).predecessors(identityPass);
 				Q identity = Common.toQ(dfInterprocInvokeEdge.getNode(EdgeDirection.TO));
 				Q target = Common.universe().edgesTaggedWithAny(XCSG.Contains).predecessors(identity);
-//				// infer per control flow call summary edges
-//				for(GraphElement perControlFlowEdge : Common.universe().edgesTaggedWithAll(Edge.CALL, Edge.PER_CONTROL_FLOW).betweenStep(callsite, target).eval().edges()){
-//					perControlFlowEdge.tag(PER_CONTROL_FLOW);
-//					notInferredPerControlFlowCallEdges.remove(perControlFlowEdge); // remove the edge if it was previously thought to have been not inferred
-//				}
-//				for(GraphElement callEdge : Common.universe().edgesTaggedWithAny(Edge.CALL, Edge.PER_CONTROL_FLOW).forwardStep(callsite)
-//						.differenceEdges(Common.universe().edgesTaggedWithAll(Edge.CALL, Edge.PER_CONTROL_FLOW, CALL)).eval().edges()){
-//					if(!callEdge.tags().contains(PER_CONTROL_FLOW)){
-//						notInferredPerControlFlowCallEdges.add(callEdge);
-//					}
-//				}
+				Q callsite = Common.universe().edgesTaggedWithAny(XCSG.Contains).successors(callsiteCFNode).nodesTaggedWithAny(XCSG.CallSite);
+				// infer per control flow call summary edges
+				for(@SuppressWarnings("unused") GraphElement perControlFlowEdge : Common.universe().edgesTaggedWithAll(Edge.PER_CONTROL_FLOW).betweenStep(callsiteCFNode, target).eval().edges()){
+//					perControlFlowEdge.tag(PER_CONTROL_FLOW); // this is the Atlas way (from the control flow node)
+					GraphElement callsiteGE = callsite.eval().nodes().getFirst();
+					if(callsiteGE != null){
+						GraphElement perCFEdge = Graph.U.createEdge(callsiteGE, target.eval().nodes().getFirst());
+						perCFEdge.tag(PER_CONTROL_FLOW); // this is an edge from the callsite to the target method
+					}
+				}
 				// infer per method call summary edges
-				Q caller = Common.universe().edgesTaggedWithAny(XCSG.Contains).predecessors(callsite);
+				Q caller = Common.universe().edgesTaggedWithAny(XCSG.Contains).predecessors(callsiteCFNode);
 				for(GraphElement callEdge : Common.universe().edgesTaggedWithAll(XCSG.Call).betweenStep(caller, target).eval().edges()){
 					callEdge.tag(CALL);
-					notInferredPerMethodCallEdges.remove(callEdge); // remove the edge if it was previously thought to have been not inferred
-				}
-				for(GraphElement callEdge : Common.universe().edgesTaggedWithAny(XCSG.Call).forwardStep(caller)
-						.differenceEdges(Common.universe().edgesTaggedWithAll(XCSG.Call, CALL)).eval().edges()){
-					if(!callEdge.tags().contains(CALL)){
-						notInferredPerMethodCallEdges.add(callEdge);
-					}
 				}
 			}
 		}
@@ -142,7 +129,8 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 				if(reachableMethods.contains(callingMethod)){
 					callEdge.tag(CALL);
 					Q callsites = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.CallSite);
-					for(GraphElement perControlFlowEdge : perControlFlowEdges.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
+					Q cfNodes = Common.universe().edgesTaggedWithAny(XCSG.Contains).predecessors(callsites);
+					for(GraphElement perControlFlowEdge : perControlFlowEdges.betweenStep(cfNodes, Common.toQ(calledMethod)).eval().edges()){
 						perControlFlowEdge.tag(PER_CONTROL_FLOW);
 					}
 				}
