@@ -76,7 +76,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 
 		AtlasSet<GraphElement> mainMethods = DiscoverMainMethods.findMainMethods().eval().nodes();
 		if(libraryCallGraphConstructionEnabled || mainMethods.isEmpty()){
-			if(libraryCallGraphConstructionEnabled && mainMethods.isEmpty()){
+			if(!libraryCallGraphConstructionEnabled && mainMethods.isEmpty()){
 				Log.warning("Application does not contain a main method, building a call graph using library assumptions.");
 			}
 			// if we are building a call graph for a library there is no main method...
@@ -104,28 +104,22 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		while(!worklist.isEmpty()){
 			GraphElement method = worklist.removeFirst();
 			
-			// our goal is to first build a set of feasible allocation types that could reach this method
-			AtlasSet<GraphElement> allocationTypes = new AtlasHashSet<GraphElement>();
-			
 			// we should consider the allocation types instantiated directly in the method
-			AtlasSet<GraphElement> methodAllocationTypes = getAllocationTypesSet(method);
-			if(methodAllocationTypes.isEmpty()){
+			AtlasSet<GraphElement> allocationTypes = getAllocationTypesSet(method);
+			if(allocationTypes.isEmpty()){
 				// allocations are contained (declared) within the methods in the method reverse call graph
 				Q methodDeclarations = declarations.forward(Common.toQ(method));
 				Q allocations = methodDeclarations.nodesTaggedWithAny(XCSG.Instantiation);
 				// collect the types of each allocation
-				methodAllocationTypes.addAll(typeOfEdges.successors(allocations).eval().nodes());
+				allocationTypes.addAll(typeOfEdges.successors(allocations).eval().nodes());
+				
+				AtlasSet<GraphElement> parentMethods = Common.toQ(cgRTA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
+				for(GraphElement parentMethod : parentMethods){
+					AtlasSet<GraphElement> parentAllocationTypes = getAllocationTypesSet(parentMethod);
+					allocationTypes.addAll(parentAllocationTypes);
+				}
 			}
-			allocationTypes.addAll(methodAllocationTypes);
 			
-			// we should also include the allocation types of each parent method (in the current RTA call graph)
-			// note: parent methods does not include the origin method
-			AtlasSet<GraphElement> parentMethods = Common.toQ(cgRTA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
-			for(GraphElement parentMethod : parentMethods){
-				AtlasSet<GraphElement> parentAllocationTypes = getAllocationTypesSet(parentMethod);
-				allocationTypes.addAll(parentAllocationTypes);
-			}
-
 			// next get a set of all the CHA call edges from the method and create an RTA edge
 			// from the method to the target method in the CHA call graph if the target methods
 			// type is compatible with the feasibly allocated types that would reach this method
@@ -135,15 +129,9 @@ public class RapidTypeAnalysis extends CGAnalysis {
 				// includes called methods marked static and constructors
 				GraphElement calledMethod = callEdge.getNode(EdgeDirection.TO);
 				if(calledMethod.taggedWith(Node.IS_STATIC)){
-					cgRTA.add(callEdge);
-					if(!worklist.contains(calledMethod)){
-						worklist.add(calledMethod);
-					}
+					updateCallGraph(worklist, cgRTA, method, allocationTypes, callEdge, calledMethod);
 				} else if(calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
-					cgRTA.add(callEdge);
-					if(!worklist.contains(calledMethod)){
-						worklist.add(calledMethod);
-					}
+					updateCallGraph(worklist, cgRTA, method, allocationTypes, callEdge, calledMethod);
 				} else {
 					// the call edge is a dynamic dispatch, need to resolve possible dispatches
 					// a dispatch is possible if the type declaring the method is one of the 
@@ -152,10 +140,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 					// because methods can be inherited from parent types
 					Q typeDeclaringCalledMethod = declarations.predecessors(Common.toQ(calledMethod));
 					if(!typeHierarchy.forward(Common.toQ(allocationTypes)).intersection(typeDeclaringCalledMethod).eval().nodes().isEmpty()){
-						cgRTA.add(callEdge);
-						if(!worklist.contains(calledMethod)){
-							worklist.add(calledMethod);
-						}
+						updateCallGraph(worklist, cgRTA, method, allocationTypes, callEdge, calledMethod);
 					}
 				}
 			}
@@ -171,6 +156,23 @@ public class RapidTypeAnalysis extends CGAnalysis {
 			Q callsites = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.CallSite);
 			for(GraphElement perControlFlowEdge : pcfCHA.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
 				perControlFlowEdge.tag(PER_CONTROL_FLOW);
+			}
+		}
+	}
+
+	private void updateCallGraph(LinkedList<GraphElement> worklist, AtlasSet<GraphElement> cgRTA, GraphElement method,
+			AtlasSet<GraphElement> allocationTypes, GraphElement callEdge, GraphElement calledMethod) {
+		if(Common.toQ(cgRTA).betweenStep(Common.toQ(method), Common.toQ(calledMethod)).eval().edges().isEmpty()){
+			cgRTA.add(callEdge);
+			if(!worklist.contains(calledMethod)){
+				worklist.add(calledMethod);
+			}
+		} else {
+			AtlasSet<GraphElement> toAllocationTypes = getAllocationTypesSet(calledMethod);
+			if(toAllocationTypes.addAll(allocationTypes)){
+				if(!worklist.contains(calledMethod)){
+					worklist.add(calledMethod);
+				}
 			}
 		}
 	}

@@ -81,7 +81,7 @@ public class FieldTypeAnalysis extends CGAnalysis {
 
 		AtlasSet<GraphElement> mainMethods = DiscoverMainMethods.findMainMethods().eval().nodes();
 		if(libraryCallGraphConstructionEnabled || mainMethods.isEmpty()){
-			if(libraryCallGraphConstructionEnabled && mainMethods.isEmpty()){
+			if(!libraryCallGraphConstructionEnabled && mainMethods.isEmpty()){
 				Log.warning("Application does not contain a main method, building a call graph using library assumptions.");
 			}
 			// if we are building a call graph for a library there is no main method...
