@@ -109,10 +109,14 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 						Q methodSignatureType = containsEdges.predecessors(Common.toQ(methodSignature));
 						boolean abstractMethodSignatureType = methodSignatureType.eval().nodes().getFirst().taggedWith(XCSG.Java.AbstractClass);
 						if(abstractMethodSignatureType){
-							Q resolvedDispatchSubTypes = containsEdges.predecessors(resolvedDispatches.difference(Common.toQ(methodSignature)));
-							if(declaredSubtypeHierarchy.difference(methodSignatureType, resolvedDispatchSubTypes).eval().nodes().isEmpty()){
-								// all subtypes override method signature, method signature implementation can never be called
-								resolvedDispatches = resolvedDispatches.difference(Common.toQ(methodSignature));
+							Q resolvedDispatchConcreteSubTypes = containsEdges.predecessors(resolvedDispatches.difference(Common.toQ(methodSignature)))
+									.difference(Common.universe().nodesTaggedWithAny(XCSG.Java.AbstractClass));
+							if(!resolvedDispatchConcreteSubTypes.eval().nodes().isEmpty()){
+								// there are concrete subtypes
+								if(declaredSubtypeHierarchy.difference(methodSignatureType, resolvedDispatchConcreteSubTypes).eval().nodes().isEmpty()){
+									// all subtypes override method signature, method signature implementation can never be called
+									resolvedDispatches = resolvedDispatches.difference(Common.toQ(methodSignature));
+								}
 							}
 						}
 					}
