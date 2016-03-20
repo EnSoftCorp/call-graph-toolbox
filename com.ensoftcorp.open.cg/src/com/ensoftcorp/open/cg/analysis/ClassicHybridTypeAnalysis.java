@@ -14,6 +14,7 @@ import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.atlas.java.core.script.CommonQueries;
 import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
+import com.ensoftcorp.open.toolbox.commons.SetDefinitions;
 import com.ensoftcorp.open.toolbox.commons.analysis.DiscoverMainMethods;
 import com.ensoftcorp.open.toolbox.commons.analysis.utils.StandardQueries;
 
@@ -85,9 +86,9 @@ public class ClassicHybridTypeAnalysis extends CGAnalysis {
 				Log.warning("Application does not contain a main method, building a call graph using library assumptions.");
 			}
 			// if we are building a call graph for a library there is no main method...
-			// so we over approximate and consider every method as a valid program entry point
-			AtlasSet<GraphElement> allMethods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
-			for(GraphElement method : allMethods){
+			// a nice balance is to start with all public methods in the library
+			AtlasSet<GraphElement> rootMethods = SetDefinitions.app().nodesTaggedWithAll(XCSG.publicVisibility, XCSG.Method).eval().nodes();
+			for(GraphElement method : rootMethods){
 				worklist.add(method);
 			}
 		} else {
