@@ -71,8 +71,8 @@ public class Stats {
 		fw.write(cga.getClass().getSimpleName() + "," + decimalFormat.format(time)
 				+ "," + cgGraph.nodes().size() + "," + cgGraph.edges().size() 
 				+ "," + callsites.size() + "," + getStaticDispatches(callsites).size() + "," + getDynamicDispatches(callsites).size()
-				+ "," + getMaxDynamicDispatchesPerCallsite(callsites, cga) 
 				+ "," + getMinDynamicDispatchesPerCallsite(callsites, cga) 
+				+ "," + getMaxDynamicDispatchesPerCallsite(callsites, cga) 
 				+ "," + decimalFormat.format(getAverageDynamicDispatchesPerCallsite(callsites, cga)) + "\n");
 		
 		fw.flush();
