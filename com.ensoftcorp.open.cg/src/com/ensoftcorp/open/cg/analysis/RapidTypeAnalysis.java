@@ -8,7 +8,6 @@ import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.log.Log;
-import com.ensoftcorp.atlas.core.query.Attr.Node;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
@@ -113,6 +112,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 				// collect the types of each allocation
 				allocationTypes.addAll(typeOfEdges.successors(allocations).eval().nodes());
 				
+				// we should also include the allocation types of each parent method (in the current RTA call graph)
 				AtlasSet<GraphElement> parentMethods = Common.toQ(cgRTA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
 				for(GraphElement parentMethod : parentMethods){
 					AtlasSet<GraphElement> parentAllocationTypes = getAllocationTypesSet(parentMethod);
@@ -128,9 +128,8 @@ public class RapidTypeAnalysis extends CGAnalysis {
 				// add static dispatches to the rta call graph
 				// includes called methods marked static and constructors
 				GraphElement calledMethod = callEdge.getNode(EdgeDirection.TO);
-				if(calledMethod.taggedWith(Node.IS_STATIC)){
-					updateCallGraph(worklist, cgRTA, method, allocationTypes, callEdge, calledMethod);
-				} else if(calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
+				boolean isStaticDispatch = cha.getPerControlFlowGraph().predecessors(Common.toQ(method)).nodesTaggedWithAny(XCSG.StaticDispatchCallSite).eval().nodes().isEmpty();
+				if(isStaticDispatch || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
 					updateCallGraph(worklist, cgRTA, method, allocationTypes, callEdge, calledMethod);
 				} else {
 					// the call edge is a dynamic dispatch, need to resolve possible dispatches
@@ -160,8 +159,16 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		}
 	}
 
-	private void updateCallGraph(LinkedList<GraphElement> worklist, AtlasSet<GraphElement> cgRTA, GraphElement method,
-			AtlasSet<GraphElement> allocationTypes, GraphElement callEdge, GraphElement calledMethod) {
+	/**
+	 * Updates the call graph and worklist for methods
+	 * @param worklist
+	 * @param cgRTA
+	 * @param method
+	 * @param allocationTypes
+	 * @param callEdge
+	 * @param calledMethod
+	 */
+	public static void updateCallGraph(LinkedList<GraphElement> worklist, AtlasSet<GraphElement> cgRTA, GraphElement method, AtlasSet<GraphElement> allocationTypes, GraphElement callEdge, GraphElement calledMethod) {
 		if(Common.toQ(cgRTA).betweenStep(Common.toQ(method), Common.toQ(calledMethod)).eval().edges().isEmpty()){
 			cgRTA.add(callEdge);
 			if(!worklist.contains(calledMethod)){

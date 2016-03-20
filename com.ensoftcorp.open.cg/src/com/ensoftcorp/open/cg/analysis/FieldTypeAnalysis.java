@@ -8,7 +8,6 @@ import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.log.Log;
-import com.ensoftcorp.atlas.core.query.Attr.Node;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
@@ -112,48 +111,47 @@ public class FieldTypeAnalysis extends CGAnalysis {
 			if(workitem.taggedWith(XCSG.Method)){
 				GraphElement method = workitem;
 				
-				// our goal is to first build a set of feasible allocation types that could reach this method
-				AtlasSet<GraphElement> allocationTypes = new AtlasHashSet<GraphElement>();
-				
 				// we should consider the allocation types instantiated directly in the method
 				// note even if the allocation set is not empty here, this may be the first time
 				// we've reached this method because information could have been propagated from
 				// a field first
-				AtlasSet<GraphElement> methodAllocationTypes = getAllocationTypesSet(method);
-				// allocations are contained (declared) within the methods in the method reverse call graph
-				Q methodDeclarations = declarations.forward(Common.toQ(method));
-				Q allocations = methodDeclarations.nodesTaggedWithAny(XCSG.Instantiation);
-				// collect the types of each allocation
-				methodAllocationTypes.addAll(typeOfEdges.successors(allocations).eval().nodes());
-				allocationTypes.addAll(methodAllocationTypes);
-				
-				// for RTA and RTA derivatives we should also include the allocation types of each parent method (in the current FTA call graph)
-				// note: parent methods does not include the origin method
-				AtlasSet<GraphElement> parentMethods = Common.toQ(cgFTA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
-				for(GraphElement parentMethod : parentMethods){
-					AtlasSet<GraphElement> parentAllocationTypes = getAllocationTypesSet(parentMethod);
-					allocationTypes.addAll(parentAllocationTypes);
-				}
-				
-				// In FTA any method in the method or method's parents that reads from a field 
-				// can have a reference to the allocations that occur in any another method that writes to that field
-				Q reachableMethodDeclarations = declarations.forward(Common.toQ(method).union(Common.toQ(parentMethods)));
-				AtlasSet<GraphElement> readFields = dataFlowEdges.predecessors(reachableMethodDeclarations).nodesTaggedWithAny(XCSG.Field).eval().nodes();
-				for(GraphElement readField : readFields){
-					AtlasSet<GraphElement> fieldAllocationTypes = getAllocationTypesSet(readField);
-					allocationTypes.addAll(fieldAllocationTypes);
-				}
-				
-				// In FTA if the method writes to a field then all the compatible allocated types available to the method
-				// can be propagated to the field
-				AtlasSet<GraphElement> writtenFields = dataFlowEdges.successors(reachableMethodDeclarations).nodesTaggedWithAny(XCSG.Field).eval().nodes();
-				for(GraphElement writtenField : writtenFields){
-					AtlasSet<GraphElement> fieldAllocationTypes = getAllocationTypesSet(writtenField);
-					Q compatibleTypes = Common.toQ(allocationTypes).intersection(typeHierarchy.reverse(typeOfEdges.successors(Common.toQ(writtenField))));
-					if(fieldAllocationTypes.addAll(compatibleTypes.eval().nodes())){
-						if(!worklist.contains(writtenField)){
-							worklist.add(writtenField);
-						}	
+				AtlasSet<GraphElement> allocationTypes = getAllocationTypesSet(method);
+				if(allocationTypes.isEmpty()){
+					// allocations are contained (declared) within the methods in the method reverse call graph
+					Q methodDeclarations = declarations.forward(Common.toQ(method));
+					Q allocations = methodDeclarations.nodesTaggedWithAny(XCSG.Instantiation);
+					// collect the types of each allocation
+					allocationTypes.addAll(typeOfEdges.successors(allocations).eval().nodes());
+					allocationTypes.addAll(allocationTypes);
+					
+					// for RTA and RTA derivatives we should also include the allocation types of each parent method (in the current FTA call graph)
+					// note: parent methods does not include the origin method
+					AtlasSet<GraphElement> parentMethods = Common.toQ(cgFTA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
+					for(GraphElement parentMethod : parentMethods){
+						AtlasSet<GraphElement> parentAllocationTypes = getAllocationTypesSet(parentMethod);
+						allocationTypes.addAll(parentAllocationTypes);
+					}
+					
+					// In FTA any method in the method or method's parents that reads from a field 
+					// can have a reference to the allocations that occur in any another method that writes to that field
+					Q reachableMethodDeclarations = declarations.forward(Common.toQ(method).union(Common.toQ(parentMethods)));
+					AtlasSet<GraphElement> readFields = dataFlowEdges.predecessors(reachableMethodDeclarations).nodesTaggedWithAny(XCSG.Field).eval().nodes();
+					for(GraphElement readField : readFields){
+						AtlasSet<GraphElement> fieldAllocationTypes = getAllocationTypesSet(readField);
+						allocationTypes.addAll(fieldAllocationTypes);
+					}
+					
+					// In FTA if the method writes to a field then all the compatible allocated types available to the method
+					// can be propagated to the field
+					AtlasSet<GraphElement> writtenFields = dataFlowEdges.successors(reachableMethodDeclarations).nodesTaggedWithAny(XCSG.Field).eval().nodes();
+					for(GraphElement writtenField : writtenFields){
+						AtlasSet<GraphElement> fieldAllocationTypes = getAllocationTypesSet(writtenField);
+						Q compatibleTypes = Common.toQ(allocationTypes).intersection(typeHierarchy.reverse(typeOfEdges.successors(Common.toQ(writtenField))));
+						if(fieldAllocationTypes.addAll(compatibleTypes.eval().nodes())){
+							if(!worklist.contains(writtenField)){
+								worklist.add(writtenField);
+							}	
+						}
 					}
 				}
 
@@ -165,16 +163,9 @@ public class FieldTypeAnalysis extends CGAnalysis {
 					// add static dispatches to the fta call graph
 					// includes called methods marked static and constructors
 					GraphElement calledMethod = callEdge.getNode(EdgeDirection.TO);
-					if(calledMethod.taggedWith(Node.IS_STATIC)){
-						cgFTA.add(callEdge);
-						if(!worklist.contains(calledMethod)){
-							worklist.add(calledMethod);
-						}
-					} else if(calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
-						cgFTA.add(callEdge);
-						if(!worklist.contains(calledMethod)){
-							worklist.add(calledMethod);
-						}
+					boolean isStaticDispatch = cha.getPerControlFlowGraph().predecessors(Common.toQ(method)).nodesTaggedWithAny(XCSG.StaticDispatchCallSite).eval().nodes().isEmpty();
+					if(isStaticDispatch || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
+						updateCallGraph(worklist, cgFTA, method, allocationTypes, callEdge, calledMethod);
 					} else {
 						// the call edge is a dynamic dispatch, need to resolve possible dispatches
 						// a dispatch is possible if the type declaring the method is one of the 
@@ -183,10 +174,7 @@ public class FieldTypeAnalysis extends CGAnalysis {
 						// because methods can be inherited from parent types
 						Q typeDeclaringCalledMethod = declarations.predecessors(Common.toQ(calledMethod));
 						if(!typeHierarchy.forward(Common.toQ(allocationTypes)).intersection(typeDeclaringCalledMethod).eval().nodes().isEmpty()){
-							cgFTA.add(callEdge);
-							if(!worklist.contains(calledMethod)){
-								worklist.add(calledMethod);
-							}
+							updateCallGraph(worklist, cgFTA, method, allocationTypes, callEdge, calledMethod);
 						}
 					}
 				}
@@ -210,15 +198,55 @@ public class FieldTypeAnalysis extends CGAnalysis {
 		// just tag each edge in the FTA call graph with "FTA" to distinguish it
 		// from the CHA call graph
 		Q pcfCHA = cha.getPerControlFlowGraph();
-		for(GraphElement etaEdge : cgFTA){
-			etaEdge.tag(CALL);
-			GraphElement callingMethod = etaEdge.getNode(EdgeDirection.FROM);
-			GraphElement calledMethod = etaEdge.getNode(EdgeDirection.TO);
+		for(GraphElement xtaEdge : cgFTA){
+			xtaEdge.tag(CALL);
+			GraphElement callingMethod = xtaEdge.getNode(EdgeDirection.FROM);
+			GraphElement calledMethod = xtaEdge.getNode(EdgeDirection.TO);
 			Q callsites = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.CallSite);
 			for(GraphElement perControlFlowEdge : pcfCHA.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
 				perControlFlowEdge.tag(PER_CONTROL_FLOW);
 			}
 		}	
+	}
+	
+	/**
+	 * Updates the call graph and worklist for methods and fields
+	 * @param worklist
+	 * @param cgFTA
+	 * @param method
+	 * @param allocationTypes
+	 * @param callEdge
+	 * @param calledMethod
+	 */
+	public static void updateCallGraph(LinkedList<GraphElement> worklist, AtlasSet<GraphElement> cgFTA, GraphElement method, AtlasSet<GraphElement> allocationTypes, GraphElement callEdge, GraphElement calledMethod) {
+		if(Common.toQ(cgFTA).betweenStep(Common.toQ(method), Common.toQ(calledMethod)).eval().edges().isEmpty()){
+			cgFTA.add(callEdge);
+			if(!worklist.contains(calledMethod)){
+				worklist.add(calledMethod);
+			}
+		} else {
+			AtlasSet<GraphElement> toAllocationTypes = getAllocationTypesSet(calledMethod);
+			if(toAllocationTypes.addAll(allocationTypes)){
+				if(!worklist.contains(calledMethod)){
+					worklist.add(calledMethod);
+				}
+			}
+		}
+		
+		// update fields types
+		Q dataFlowEdges = Common.universe().edgesTaggedWithAny(XCSG.DataFlow_Edge);
+		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
+		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
+		AtlasSet<GraphElement> writtenFields = dataFlowEdges.successors(Common.toQ(calledMethod)).nodesTaggedWithAny(XCSG.Field).eval().nodes();
+		for(GraphElement writtenField : writtenFields){
+			AtlasSet<GraphElement> fieldAllocationTypes = getAllocationTypesSet(writtenField);
+			Q compatibleTypes = Common.toQ(allocationTypes).intersection(typeHierarchy.reverse(typeOfEdges.successors(Common.toQ(writtenField))));
+			if(fieldAllocationTypes.addAll(compatibleTypes.eval().nodes())){
+				if(!worklist.contains(writtenField)){
+					worklist.add(writtenField);
+				}	
+			}
+		}
 	}
 	
 	/**

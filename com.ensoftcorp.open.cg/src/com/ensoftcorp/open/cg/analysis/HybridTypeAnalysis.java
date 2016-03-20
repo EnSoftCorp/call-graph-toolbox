@@ -8,7 +8,6 @@ import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.log.Log;
-import com.ensoftcorp.atlas.core.query.Attr.Node;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
@@ -108,82 +107,81 @@ public class HybridTypeAnalysis extends CGAnalysis {
 		AtlasSet<GraphElement> cgXTA = new AtlasHashSet<GraphElement>();
 		
 		// iterate until the worklist is empty
-		// in XTA and its derivatives the worklist could contain methods or fields
+		// in FTA and its derivatives the worklist could contain methods or fields
 		while(!worklist.isEmpty()){
 			GraphElement workitem = worklist.removeFirst();
 			if(workitem.taggedWith(XCSG.Method)){
 				GraphElement method = workitem;
 				
-				// our goal is to first build a set of feasible allocation types that could reach this method
-				AtlasSet<GraphElement> allocationTypes = new AtlasHashSet<GraphElement>();
-				
 				// we should consider the allocation types instantiated directly in the method
 				// note even if the allocation set is not empty here, this may be the first time
 				// we've reached this method because information could have been propagated from
 				// a field first
-				AtlasSet<GraphElement> methodAllocationTypes = getAllocationTypesSet(method);
-				// allocations are contained (declared) within the methods in the method reverse call graph
-				Q methodDeclarations = declarations.forward(Common.toQ(method));
-				Q allocations = methodDeclarations.nodesTaggedWithAny(XCSG.Instantiation);
-				// collect the types of each allocation
-				methodAllocationTypes.addAll(typeOfEdges.successors(allocations).eval().nodes());
-				allocationTypes.addAll(methodAllocationTypes);
-				
-				// In MTA we should also include the allocation types of each parent method (in the current MTA call graph)
-				// but we should only allow compatible parent allocation types which could be passed through the method's parameter types or subtypes
-				// restrict allocation types declared in parents to only the types that are compatible 
-				// with the type or subtype of each of the method's parameters
-				Q parameters = CommonQueries.methodParameter(Common.toQ(method));
-				Q parameterTypes = typeOfEdges.successors(parameters);
-				Q parameterTypeHierarchy = typeHierarchy.reverse(parameterTypes);
-				// get compatible parent allocation types
-				AtlasSet<GraphElement> parentMethods = Common.toQ(cgXTA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
-				for(GraphElement parentMethod : parentMethods){
-					Q parentAllocationTypes = Common.toQ(getAllocationTypesSet(parentMethod));
-					// remove the parent allocation types that could not be passed through the method's parameters
-					parentAllocationTypes = parameterTypeHierarchy.intersection(parentAllocationTypes);
-					// add the parameter type compatible allocation types
-					allocationTypes.addAll(parentAllocationTypes.eval().nodes());
-				}
-				
-				// finally as in MTA considers the return types of methods that are called from the given method
-				// add allocations that are made by calling a method (static or virtual) that return an allocation
-				// note that the declared return type does not involve resolving dynamic dispatches (so this could be the
-				// return type of any method resolved by a CHA analysis since all are statically typed to the same type)
-				Q returnTypes = typeOfEdges.successors(CommonQueries.methodReturn(cgCHA.successors(Common.toQ(method))));
-				allocationTypes.addAll(returnTypes.eval().nodes());
-				
-				// From FTA any method in the method or method's parents that reads from a field 
-				// can have a reference to the allocations that occur in any another method that writes to that field
-				Q reachableMethodDeclarations = declarations.forward(Common.toQ(method).union(Common.toQ(parentMethods)));
-				AtlasSet<GraphElement> readFields = dataFlowEdges.predecessors(reachableMethodDeclarations).nodesTaggedWithAny(XCSG.Field).eval().nodes();
-				for(GraphElement readField : readFields){
-					AtlasSet<GraphElement> fieldAllocationTypes = getAllocationTypesSet(readField);
-					allocationTypes.addAll(fieldAllocationTypes);
-				}
-				
-				// In FTA if the method writes to a field then all the compatible allocated types available to the method
-				// can be propagated to the field
-				AtlasSet<GraphElement> writtenFields = dataFlowEdges.successors(reachableMethodDeclarations).nodesTaggedWithAny(XCSG.Field).eval().nodes();
-				for(GraphElement writtenField : writtenFields){
-					AtlasSet<GraphElement> fieldAllocationTypes = getAllocationTypesSet(writtenField);
-					Q compatibleTypes = Common.toQ(allocationTypes).intersection(typeHierarchy.reverse(typeOfEdges.successors(Common.toQ(writtenField))));
-					if(fieldAllocationTypes.addAll(compatibleTypes.eval().nodes())){
-						if(!worklist.contains(writtenField)){
-							worklist.add(writtenField);
-						}	
+				AtlasSet<GraphElement> allocationTypes = getAllocationTypesSet(method);
+				if(allocationTypes.isEmpty()){
+					// allocations are contained (declared) within the methods in the method reverse call graph
+					Q methodDeclarations = declarations.forward(Common.toQ(method));
+					Q allocations = methodDeclarations.nodesTaggedWithAny(XCSG.Instantiation);
+					// collect the types of each allocation
+					allocationTypes.addAll(typeOfEdges.successors(allocations).eval().nodes());
+					allocationTypes.addAll(allocationTypes);
+					
+					// we should also include the allocation types of each parent method (in the current MTA call graph)
+					// but we should only allow compatible parent allocation types which could be passed through the method's parameter types or subtypes
+					// restrict allocation types declared in parents to only the types that are compatible 
+					// with the type or subtype of each of the method's parameters
+					Q parameters = CommonQueries.methodParameter(Common.toQ(method));
+					Q parameterTypes = typeOfEdges.successors(parameters);
+					Q parameterTypeHierarchy = typeHierarchy.reverse(parameterTypes);
+					// get compatible parent allocation types
+					AtlasSet<GraphElement> parentMethods = Common.toQ(cgXTA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
+					for(GraphElement parentMethod : parentMethods){
+						Q parentAllocationTypes = Common.toQ(getAllocationTypesSet(parentMethod));
+						// remove the parent allocation types that could not be passed through the method's parameters
+						parentAllocationTypes = parameterTypeHierarchy.intersection(parentAllocationTypes);
+						// add the parameter type compatible allocation types
+						allocationTypes.addAll(parentAllocationTypes.eval().nodes());
+					}
+					
+					// MTA also considers the return types of methods that are called from the given method
+					// add allocations that are made by calling a method (static or virtual) that return an allocation
+					// note that the declared return type does not involve resolving dynamic dispatches (so this could be the
+					// return type of any method resolved by a CHA analysis since all are statically typed to the same type)
+					Q returnTypes = typeOfEdges.successors(CommonQueries.methodReturn(cgCHA.successors(Common.toQ(method))));
+					allocationTypes.addAll(returnTypes.eval().nodes());
+					
+					// In FTA any method in the method or method's parents that reads from a field 
+					// can have a reference to the allocations that occur in any another method that writes to that field
+					Q reachableMethodDeclarations = declarations.forward(Common.toQ(method).union(Common.toQ(parentMethods)));
+					AtlasSet<GraphElement> readFields = dataFlowEdges.predecessors(reachableMethodDeclarations).nodesTaggedWithAny(XCSG.Field).eval().nodes();
+					for(GraphElement readField : readFields){
+						AtlasSet<GraphElement> fieldAllocationTypes = getAllocationTypesSet(readField);
+						allocationTypes.addAll(fieldAllocationTypes);
+					}
+					
+					// In FTA if the method writes to a field then all the compatible allocated types available to the method
+					// can be propagated to the field
+					AtlasSet<GraphElement> writtenFields = dataFlowEdges.successors(reachableMethodDeclarations).nodesTaggedWithAny(XCSG.Field).eval().nodes();
+					for(GraphElement writtenField : writtenFields){
+						AtlasSet<GraphElement> fieldAllocationTypes = getAllocationTypesSet(writtenField);
+						Q compatibleTypes = Common.toQ(allocationTypes).intersection(typeHierarchy.reverse(typeOfEdges.successors(Common.toQ(writtenField))));
+						if(fieldAllocationTypes.addAll(compatibleTypes.eval().nodes())){
+							if(!worklist.contains(writtenField)){
+								worklist.add(writtenField);
+							}	
+						}
 					}
 				}
-
-				// from ETA we should inherit all allocation types from methods and their parents that 
+				
+				// for ETA we should inherit all allocation types from methods and their parents that 
 				// throw an exception that could be caught by this method
 				Q potentialCatchBlocks = declarations.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
 				Q throwingMethods = declarations.reverse(ExceptionAnalysis.findThrowForCatch(potentialCatchBlocks)).nodesTaggedWithAny(XCSG.Method);
 				throwingMethods = throwingMethods.difference(Common.toQ(method)); // only worried about exceptions that propagate back up the stack
 				for(GraphElement throwingMethod : throwingMethods.eval().nodes()){
-					Q parentAllocationTypes = Common.toQ(getAllocationTypesSet(throwingMethod));
+					Q throwerAllocationTypes = Common.toQ(getAllocationTypesSet(throwingMethod));
 					// add the parameter type compatible allocation types
-					allocationTypes.addAll(parentAllocationTypes.eval().nodes());
+					allocationTypes.addAll(throwerAllocationTypes.eval().nodes());
 				}
 				
 				// finally if this method throws an exception we should propagate those types to all
@@ -193,28 +191,23 @@ public class HybridTypeAnalysis extends CGAnalysis {
 				catchingMethods = catchingMethods.difference(Common.toQ(method)); // only worried about exceptions that propagate back up the stack
 				for(GraphElement catchingMethod : catchingMethods.eval().nodes()){
 					if(getAllocationTypesSet(catchingMethod).addAll(allocationTypes)){
-						worklist.add(catchingMethod);
+						if(!worklist.contains(catchingMethod)){
+							worklist.add(catchingMethod);
+						}
 					}
 				}
-				
+
 				// next get a set of all the CHA call edges from the method and create an XTA edge
 				// from the method to the target method in the CHA call graph if the target methods
 				// type is compatible with the feasibly allocated types that would reach this method
 				AtlasSet<GraphElement> callEdges = cgCHA.forwardStep(Common.toQ(method)).eval().edges();
 				for(GraphElement callEdge : callEdges){
-					// add static dispatches to the xta call graph
+					// add static dispatches to the fta call graph
 					// includes called methods marked static and constructors
 					GraphElement calledMethod = callEdge.getNode(EdgeDirection.TO);
-					if(calledMethod.taggedWith(Node.IS_STATIC)){
-						cgXTA.add(callEdge);
-						if(!worklist.contains(calledMethod)){
-							worklist.add(calledMethod);
-						}
-					} else if(calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
-						cgXTA.add(callEdge);
-						if(!worklist.contains(calledMethod)){
-							worklist.add(calledMethod);
-						}
+					boolean isStaticDispatch = cha.getPerControlFlowGraph().predecessors(Common.toQ(method)).nodesTaggedWithAny(XCSG.StaticDispatchCallSite).eval().nodes().isEmpty();
+					if(isStaticDispatch || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
+						FieldTypeAnalysis.updateCallGraph(worklist, cgXTA, method, allocationTypes, callEdge, calledMethod);
 					} else {
 						// the call edge is a dynamic dispatch, need to resolve possible dispatches
 						// a dispatch is possible if the type declaring the method is one of the 
@@ -223,16 +216,13 @@ public class HybridTypeAnalysis extends CGAnalysis {
 						// because methods can be inherited from parent types
 						Q typeDeclaringCalledMethod = declarations.predecessors(Common.toQ(calledMethod));
 						if(!typeHierarchy.forward(Common.toQ(allocationTypes)).intersection(typeDeclaringCalledMethod).eval().nodes().isEmpty()){
-							cgXTA.add(callEdge);
-							if(!worklist.contains(calledMethod)){
-								worklist.add(calledMethod);
-							}
+							FieldTypeAnalysis.updateCallGraph(worklist, cgXTA, method, allocationTypes, callEdge, calledMethod);
 						}
 					}
 				}
 				
 			} else {
-				// from FTA new allocation types were propagated to a field, which means methods that read from the field may get new allocation types
+				// new allocation types were propagated to a field, which means methods that read from the field may get new allocation types
 				GraphElement field = workitem;
 				AtlasSet<GraphElement> fieldAllocationTypes = getAllocationTypesSet(field);
 				AtlasSet<GraphElement> readingMethods = StandardQueries.getContainingMethods(dataFlowEdges.successors(Common.toQ(field))).eval().nodes();

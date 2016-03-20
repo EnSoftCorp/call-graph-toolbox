@@ -8,7 +8,6 @@ import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.log.Log;
-import com.ensoftcorp.atlas.core.query.Attr.Node;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
@@ -106,38 +105,34 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 		while(!worklist.isEmpty()){
 			GraphElement method = worklist.removeFirst();
 			
-			// our goal is to first build a set of feasible allocation types that could reach this method
-			AtlasSet<GraphElement> allocationTypes = new AtlasHashSet<GraphElement>();
-			
 			// we should consider the allocation types instantiated directly in the method
-			AtlasSet<GraphElement> methodAllocationTypes = getAllocationTypesSet(method);
-			if(methodAllocationTypes.isEmpty()){
+			AtlasSet<GraphElement> allocationTypes = getAllocationTypesSet(method);
+			if(allocationTypes.isEmpty()){
 				// allocations are contained (declared) within the methods in the method reverse call graph
 				Q methodDeclarations = declarations.forward(Common.toQ(method));
 				Q allocations = methodDeclarations.nodesTaggedWithAny(XCSG.Instantiation);
 				// collect the types of each allocation
-				methodAllocationTypes.addAll(typeOfEdges.successors(allocations).eval().nodes());
+				allocationTypes.addAll(typeOfEdges.successors(allocations).eval().nodes());
+				
+				// we should also include the allocation types of each parent method (in the current ETA call graph)
+				// get compatible parent allocation types
+				AtlasSet<GraphElement> parentMethods = Common.toQ(cgETA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
+				for(GraphElement parentMethod : parentMethods){
+					Q parentAllocationTypes = Common.toQ(getAllocationTypesSet(parentMethod));
+					// add the parameter type compatible allocation types
+					allocationTypes.addAll(parentAllocationTypes.eval().nodes());
+				}
 			}
-			allocationTypes.addAll(methodAllocationTypes);
 			
-			// we should also include the allocation types of each parent method (in the current ETA call graph)
-			// get compatible parent allocation types
-			AtlasSet<GraphElement> parentMethods = Common.toQ(cgETA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
-			for(GraphElement parentMethod : parentMethods){
-				Q parentAllocationTypes = Common.toQ(getAllocationTypesSet(parentMethod));
-				// add the parameter type compatible allocation types
-				allocationTypes.addAll(parentAllocationTypes.eval().nodes());
-			}
-
 			// for ETA we should inherit all allocation types from methods and their parents that 
 			// throw an exception that could be caught by this method
 			Q potentialCatchBlocks = declarations.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
 			Q throwingMethods = declarations.reverse(ExceptionAnalysis.findThrowForCatch(potentialCatchBlocks)).nodesTaggedWithAny(XCSG.Method);
 			throwingMethods = throwingMethods.difference(Common.toQ(method)); // only worried about exceptions that propagate back up the stack
 			for(GraphElement throwingMethod : throwingMethods.eval().nodes()){
-				Q parentAllocationTypes = Common.toQ(getAllocationTypesSet(throwingMethod));
+				Q throwerAllocationTypes = Common.toQ(getAllocationTypesSet(throwingMethod));
 				// add the parameter type compatible allocation types
-				allocationTypes.addAll(parentAllocationTypes.eval().nodes());
+				allocationTypes.addAll(throwerAllocationTypes.eval().nodes());
 			}
 			
 			// finally if this method throws an exception we should propagate those types to all
@@ -147,10 +142,12 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 			catchingMethods = catchingMethods.difference(Common.toQ(method)); // only worried about exceptions that propagate back up the stack
 			for(GraphElement catchingMethod : catchingMethods.eval().nodes()){
 				if(getAllocationTypesSet(catchingMethod).addAll(allocationTypes)){
-					worklist.add(catchingMethod);
+					if(!worklist.contains(catchingMethod)){
+						worklist.add(catchingMethod);
+					}
 				}
 			}
-					
+			
 			// next get a set of all the CHA call edges from the method and create an ETA edge
 			// from the method to the target method in the CHA call graph if the target methods
 			// type is compatible with the feasibly allocated types that would reach this method
@@ -159,16 +156,9 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 				// add static dispatches to the eta call graph
 				// includes called methods marked static and constructors
 				GraphElement calledMethod = callEdge.getNode(EdgeDirection.TO);
-				if(calledMethod.taggedWith(Node.IS_STATIC)){
-					cgETA.add(callEdge);
-					if(!worklist.contains(calledMethod)){
-						worklist.add(calledMethod);
-					}
-				} else if(calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
-					cgETA.add(callEdge);
-					if(!worklist.contains(calledMethod)){
-						worklist.add(calledMethod);
-					}
+				boolean isStaticDispatch = cha.getPerControlFlowGraph().predecessors(Common.toQ(method)).nodesTaggedWithAny(XCSG.StaticDispatchCallSite).eval().nodes().isEmpty();
+				if(isStaticDispatch || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
+					RapidTypeAnalysis.updateCallGraph(worklist, cgETA, method, allocationTypes, callEdge, calledMethod);
 				} else {
 					// the call edge is a dynamic dispatch, need to resolve possible dispatches
 					// a dispatch is possible if the type declaring the method is one of the 
@@ -177,10 +167,7 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 					// because methods can be inherited from parent types
 					Q typeDeclaringCalledMethod = declarations.predecessors(Common.toQ(calledMethod));
 					if(!typeHierarchy.forward(Common.toQ(allocationTypes)).intersection(typeDeclaringCalledMethod).eval().nodes().isEmpty()){
-						cgETA.add(callEdge);
-						if(!worklist.contains(calledMethod)){
-							worklist.add(calledMethod);
-						}
+						RapidTypeAnalysis.updateCallGraph(worklist, cgETA, method, allocationTypes, callEdge, calledMethod);
 					}
 				}
 			}
