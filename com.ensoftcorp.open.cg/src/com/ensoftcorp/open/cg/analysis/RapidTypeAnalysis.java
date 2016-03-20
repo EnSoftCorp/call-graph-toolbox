@@ -202,4 +202,9 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		return new String[]{PER_CONTROL_FLOW, ClassHierarchyAnalysis.PER_CONTROL_FLOW};
 	}
 	
+	@Override
+	public boolean graphHasEvidenceOfPreviousRun(){
+		return Common.universe().edgesTaggedWithAny(CALL).eval().edges().size() > 0;
+	}
+	
 }

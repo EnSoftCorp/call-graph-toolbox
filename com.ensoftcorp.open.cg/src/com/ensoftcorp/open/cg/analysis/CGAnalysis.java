@@ -72,9 +72,7 @@ public abstract class CGAnalysis {
 	 * 
 	 * @return
 	 */
-	public boolean graphHasEvidenceOfPreviousRun(){
-		return Common.universe().edgesTaggedWithAny(getCallEdgeTags()).eval().edges().size() > 0;
-	}
+	public abstract boolean graphHasEvidenceOfPreviousRun();
 	
 	/**
 	 * Runs the call graph construction (if it hasn't been run already)

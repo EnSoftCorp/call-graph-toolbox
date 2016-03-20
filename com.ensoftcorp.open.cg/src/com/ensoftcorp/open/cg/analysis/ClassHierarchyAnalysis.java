@@ -147,4 +147,9 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 		return new String[]{PER_CONTROL_FLOW, LIBRARY_PER_CONTROL_FLOW};
 	}
 
+	@Override
+	public boolean graphHasEvidenceOfPreviousRun(){
+		return Common.universe().edgesTaggedWithAny(CALL).eval().edges().size() > 0;
+	}
+
 }

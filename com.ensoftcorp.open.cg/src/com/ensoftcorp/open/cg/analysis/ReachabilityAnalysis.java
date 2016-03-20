@@ -95,11 +95,6 @@ public class ReachabilityAnalysis extends CGAnalysis {
 		}
 	}
 	
-	@Override
-	public boolean graphHasEvidenceOfPreviousRun() {
-		return Common.universe().edgesTaggedWithAny(CALL, LIBRARY_CALL).eval().edges().size() > 0;
-	}
-	
 	/**
 	 * Returns a set of reachable methods (methods with the matching signature of the callsite)
 	 * Note: This method specifically includes abstract methods
@@ -169,5 +164,10 @@ public class ReachabilityAnalysis extends CGAnalysis {
 	@Override
 	public String[] getPerControlFlowEdgeTags() {
 		return new String[]{PER_CONTROL_FLOW, LIBRARY_PER_CONTROL_FLOW};
+	}
+	
+	@Override
+	public boolean graphHasEvidenceOfPreviousRun(){
+		return Common.universe().edgesTaggedWithAny(CALL).eval().edges().size() > 0;
 	}
 }

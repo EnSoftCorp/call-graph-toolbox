@@ -158,4 +158,8 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 		return new String[]{PER_CONTROL_FLOW, ClassHierarchyAnalysis.LIBRARY_PER_CONTROL_FLOW};
 	}
 
+	@Override
+	public boolean graphHasEvidenceOfPreviousRun(){
+		return Common.universe().edgesTaggedWithAny(CALL).eval().edges().size() > 0;
+	}
 }

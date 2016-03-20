@@ -221,4 +221,9 @@ public class MethodTypeAnalysis extends CGAnalysis {
 	public String[] getPerControlFlowEdgeTags() {
 		return new String[]{PER_CONTROL_FLOW, ClassHierarchyAnalysis.PER_CONTROL_FLOW};
 	}
+	
+	@Override
+	public boolean graphHasEvidenceOfPreviousRun(){
+		return Common.universe().edgesTaggedWithAny(CALL).eval().edges().size() > 0;
+	}
 }

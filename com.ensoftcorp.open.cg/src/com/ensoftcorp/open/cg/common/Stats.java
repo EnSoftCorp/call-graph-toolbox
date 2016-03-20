@@ -28,30 +28,39 @@ public class Stats {
 		fw.write("Algorithm,Nodes,Edges,# Callsites,# Static Dispatches,# Dynamic Dispatches,Max Dynamic Dispatch Targets Per Callsite,Min Dynamic Dispatch Targets Per Callsite,Average Dynamic Dispatch Targets Per Callsite\n");
 		
 		ReachabilityAnalysis ra = ReachabilityAnalysis.getInstance(enableCallGraphConstruction);
+		ra.run();
 		dumpStats(ra, fw);
 		
 		ClassHierarchyAnalysis cha = ClassHierarchyAnalysis.getInstance(enableCallGraphConstruction);
+		cha.run();
 		dumpStats(cha, fw);
 		
 		RapidTypeAnalysis rta = RapidTypeAnalysis.getInstance(enableCallGraphConstruction);
+		rta.run();
 		dumpStats(rta, fw);
 		
 		FieldTypeAnalysis fta = FieldTypeAnalysis.getInstance(enableCallGraphConstruction);
+		fta.run();
 		dumpStats(fta, fw);
 		
 		MethodTypeAnalysis mta = MethodTypeAnalysis.getInstance(enableCallGraphConstruction);
+		mta.run();
 		dumpStats(mta, fw);
 		
 		ExceptionTypeAnalysis eta = ExceptionTypeAnalysis.getInstance(enableCallGraphConstruction);
+		eta.run();
 		dumpStats(eta, fw);
 		
 		ClassicHybridTypeAnalysis cxta = ClassicHybridTypeAnalysis.getInstance(enableCallGraphConstruction);
+		cxta.run();
 		dumpStats(cxta, fw);
 		
 		HybridTypeAnalysis xta = HybridTypeAnalysis.getInstance(enableCallGraphConstruction);
+		xta.run();
 		dumpStats(xta, fw);
 		
 		ZeroControlFlowAnalysis zcfa = ZeroControlFlowAnalysis.getInstance(enableCallGraphConstruction);
+		zcfa.run();
 		dumpStats(zcfa, fw);
 		
 		fw.close();
