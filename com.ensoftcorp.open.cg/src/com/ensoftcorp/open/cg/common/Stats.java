@@ -63,7 +63,7 @@ public class Stats {
 	// max/average/min number of callees linked to each virtual call site
 	private static void dumpStats(CGAnalysis cga, FileWriter fw) throws IOException {
 		double time = cga.run();
-		Q cg = cga.getCallGraph();
+		Q cg = cga.getCallGraph().retainEdges();
 		Graph cgGraph = cg.eval();
 		AtlasSet<GraphElement> callsites = Common.universe().nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
 		
