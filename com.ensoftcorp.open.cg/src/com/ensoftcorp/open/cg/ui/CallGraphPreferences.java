@@ -49,7 +49,7 @@ public class CallGraphPreferences extends FieldEditorPreferencePage implements I
 				@Override
 				public void propertyChange(org.eclipse.jface.util.PropertyChangeEvent event) {
 					if (event.getProperty() == CallGraphPreferences.ENABLE_LIBRARY_CALL_GRAPH_CONSTRUCTION_BOOLEAN) {
-						Display.getDefault().syncExec(new Runnable(){
+						Display.getDefault().asyncExec(new Runnable(){
 							@Override
 							public void run() {
 								MessageBox dialog = new MessageBox(Display.getDefault().getActiveShell(), SWT.ICON_QUESTION | SWT.OK | SWT.CANCEL);
