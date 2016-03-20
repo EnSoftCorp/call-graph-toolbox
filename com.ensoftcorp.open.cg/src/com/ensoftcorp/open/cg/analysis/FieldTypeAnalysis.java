@@ -163,7 +163,7 @@ public class FieldTypeAnalysis extends CGAnalysis {
 					// add static dispatches to the fta call graph
 					// includes called methods marked static and constructors
 					GraphElement calledMethod = callEdge.getNode(EdgeDirection.TO);
-					boolean isStaticDispatch = cha.getPerControlFlowGraph().predecessors(Common.toQ(method)).nodesTaggedWithAny(XCSG.StaticDispatchCallSite).eval().nodes().isEmpty();
+					boolean isStaticDispatch = !cha.getPerControlFlowGraph().predecessors(Common.toQ(calledMethod)).nodesTaggedWithAny(XCSG.StaticDispatchCallSite).eval().nodes().isEmpty();
 					if(isStaticDispatch || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
 						updateCallGraph(worklist, cgFTA, method, allocationTypes, callEdge, calledMethod);
 					} else {

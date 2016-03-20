@@ -156,7 +156,7 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 				// add static dispatches to the eta call graph
 				// includes called methods marked static and constructors
 				GraphElement calledMethod = callEdge.getNode(EdgeDirection.TO);
-				boolean isStaticDispatch = cha.getPerControlFlowGraph().predecessors(Common.toQ(method)).nodesTaggedWithAny(XCSG.StaticDispatchCallSite).eval().nodes().isEmpty();
+				boolean isStaticDispatch = !cha.getPerControlFlowGraph().predecessors(Common.toQ(calledMethod)).nodesTaggedWithAny(XCSG.StaticDispatchCallSite).eval().nodes().isEmpty();
 				if(isStaticDispatch || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
 					RapidTypeAnalysis.updateCallGraph(worklist, cgETA, method, allocationTypes, callEdge, calledMethod);
 				} else {
