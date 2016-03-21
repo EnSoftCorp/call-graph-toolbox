@@ -15,7 +15,7 @@ This plugin current implements nine different call graph construction algorithms
 ## Getting Started
 Ready to get started?
 
-1. First [install](/call-graph-toolbox/install) the Points-to Toolbox plugin
+1. First [install](/call-graph-toolbox/install) the Call Graph Toolbox plugin
 2. Then check out the provided [tutorials](/call-graph-toolbox/tutorials) to jump start your analysis
 
 ## Source Code
