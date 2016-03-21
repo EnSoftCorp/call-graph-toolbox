@@ -5,7 +5,7 @@ layout: default
 ## Overview
 The Call Graph Toolbox project is a collection of Atlas native call graph construction implementations and utilities for navigating the resulting call graphs. 
 
-This plugin current implements 9 different call graph construction algorithms (including a novel Exception Type Analysis (ETA) implementation). A complete writeup and analysis of each algorithm is available at [ben-holland.com/call-graph-construction-algorithms-explained](https://ben-holland.com/call-graph-construction-algorithms-explained).
+This plugin current implements nine different call graph construction algorithms (including a novel Exception Type Analysis (ETA) implementation).
 
 ## Features
 - User configurable analysis preferences for whole and partial program analysis
