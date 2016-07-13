@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
-      id="CallGraphToolbox"
+      id="com.ensoftcorp.open.cg"
       label="Call Graph Toolbox"
       version="3.0.8.qualifier"
       provider-name="Ensoft Corp.">
@@ -39,9 +39,10 @@ SOFTWARE.
 
    <url>
       <update label="call-graph-toolbox" url="https://ensoftcorp.github.io/call-graph-toolbox/updates/"/>
-      <discovery label="points-to-toolbox" url="https://ensoftcorp.github.io/points-to-toolbox/updates/"/>
-      <discovery label="toolbox-commons" url="https://ensoftcorp.github.io/toolbox-commons/updates/"/>
+      <discovery label="Points-to Toolbox" url="https://ensoftcorp.github.io/points-to-toolbox/updates/"/>
+      <discovery label="Toolbox  Commons" url="https://ensoftcorp.github.io/toolbox-commons/updates/"/>
       <discovery label="Atlas" url="http://download.ensoftcorp.com/atlas/eclipse"/>
+      <discovery label="Call Graph Toolbox" url="https://ensoftcorp.github.io/call-graph-toolbox"/>
    </url>
 
    <plugin
