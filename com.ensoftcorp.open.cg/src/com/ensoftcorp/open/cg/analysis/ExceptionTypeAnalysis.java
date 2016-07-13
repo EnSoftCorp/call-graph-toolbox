@@ -100,7 +100,7 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 		}
 		
 		// initially the ETA based call graph is empty
-		AtlasSet<Node> cgETA = new AtlasHashSet<Node>();
+		AtlasSet<Edge> cgETA = new AtlasHashSet<Edge>();
 		
 		// iterate until the worklist is empty (in ETA the worklist only contains methods)
 		while(!worklist.isEmpty()){
@@ -179,7 +179,7 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 		// just tag each edge in the ETA call graph with "ETA" to distinguish it
 		// from the CHA call graph
 		Q pcfCHA = cha.getPerControlFlowGraph();
-		for(Node xtaEdge : cgETA){
+		for(Edge xtaEdge : cgETA){
 			xtaEdge.tag(CALL);
 			Node callingMethod = xtaEdge.getNode(EdgeDirection.FROM);
 			Node calledMethod = xtaEdge.getNode(EdgeDirection.TO);

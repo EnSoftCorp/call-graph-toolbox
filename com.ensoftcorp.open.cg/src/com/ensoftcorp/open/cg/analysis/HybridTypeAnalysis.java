@@ -105,7 +105,7 @@ public class HybridTypeAnalysis extends CGAnalysis {
 		}
 		
 		// initially the XTA based call graph is empty
-		AtlasSet<Node> cgXTA = new AtlasHashSet<Node>();
+		AtlasSet<Edge> cgXTA = new AtlasHashSet<Edge>();
 		
 		// iterate until the worklist is empty
 		// in FTA and its derivatives the worklist could contain methods or fields
@@ -243,7 +243,7 @@ public class HybridTypeAnalysis extends CGAnalysis {
 		// just tag each edge in the XTA call graph with "XTA" to distinguish it
 		// from the CHA call graph
 		Q pcfCHA = cha.getPerControlFlowGraph();
-		for(Node xtaEdge : cgXTA){
+		for(Edge xtaEdge : cgXTA){
 			xtaEdge.tag(CALL);
 			Node callingMethod = xtaEdge.getNode(EdgeDirection.FROM);
 			Node calledMethod = xtaEdge.getNode(EdgeDirection.TO);

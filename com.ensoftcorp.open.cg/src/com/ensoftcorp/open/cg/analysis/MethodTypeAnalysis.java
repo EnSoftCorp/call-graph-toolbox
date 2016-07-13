@@ -102,7 +102,7 @@ public class MethodTypeAnalysis extends CGAnalysis {
 		}
 		
 		// initially the MTA based call graph is empty
-		AtlasSet<Node> cgMTA = new AtlasHashSet<Node>();
+		AtlasSet<Edge> cgMTA = new AtlasHashSet<Edge>();
 		
 		// iterate until the worklist is empty (in MTA the worklist only contains methods)
 		while(!worklist.isEmpty()){
@@ -174,7 +174,7 @@ public class MethodTypeAnalysis extends CGAnalysis {
 		// just tag each edge in the MTA call graph with "MTA" to distinguish it
 		// from the CHA call graph
 		Q pcfCHA = cha.getPerControlFlowGraph();
-		for(Node mtaEdge : cgMTA){
+		for(Edge mtaEdge : cgMTA){
 			mtaEdge.tag(CALL);
 			Node callingMethod = mtaEdge.getNode(EdgeDirection.FROM);
 			Node calledMethod = mtaEdge.getNode(EdgeDirection.TO);

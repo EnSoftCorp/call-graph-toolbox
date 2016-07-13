@@ -98,7 +98,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		}
 		
 		// initially the RTA based call graph is empty
-		AtlasSet<Node> cgRTA = new AtlasHashSet<Node>();
+		AtlasSet<Edge> cgRTA = new AtlasHashSet<Edge>();
 		
 		// iterate until the worklist is empty (in RTA the worklist only contains methods)
 		while(!worklist.isEmpty()){
@@ -151,7 +151,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		// just tag each edge in the RTA call graph with "RTA" to distinguish it
 		// from the CHA call graph
 		Q pcfCHA = cha.getPerControlFlowGraph();
-		for(Node rtaEdge : cgRTA){
+		for(Edge rtaEdge : cgRTA){
 			rtaEdge.tag(CALL);
 			Node callingMethod = rtaEdge.getNode(EdgeDirection.FROM);
 			Node calledMethod = rtaEdge.getNode(EdgeDirection.TO);
@@ -171,7 +171,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 	 * @param callEdge
 	 * @param calledMethod
 	 */
-	public static void updateCallGraph(LinkedList<Node> worklist, AtlasSet<Node> cgRTA, Node method, AtlasSet<Node> allocationTypes, Edge callEdge, Node calledMethod) {
+	public static void updateCallGraph(LinkedList<Node> worklist, AtlasSet<Edge> cgRTA, Node method, AtlasSet<Node> allocationTypes, Edge callEdge, Node calledMethod) {
 		if(Common.toQ(cgRTA).betweenStep(Common.toQ(method), Common.toQ(calledMethod)).eval().edges().isEmpty()){
 			cgRTA.add(callEdge);
 			if(!worklist.contains(calledMethod)){

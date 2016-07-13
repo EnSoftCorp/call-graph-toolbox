@@ -103,7 +103,7 @@ public class FieldTypeAnalysis extends CGAnalysis {
 		}
 		
 		// initially the FTA based call graph is empty
-		AtlasSet<Node> cgFTA = new AtlasHashSet<Node>();
+		AtlasSet<Edge> cgFTA = new AtlasHashSet<Edge>();
 		
 		// iterate until the worklist is empty
 		// in FTA and its derivatives the worklist could contain methods or fields
@@ -201,7 +201,7 @@ public class FieldTypeAnalysis extends CGAnalysis {
 		// just tag each edge in the FTA call graph with "FTA" to distinguish it
 		// from the CHA call graph
 		Q pcfCHA = cha.getPerControlFlowGraph();
-		for(Node xtaEdge : cgFTA){
+		for(Edge xtaEdge : cgFTA){
 			xtaEdge.tag(CALL);
 			Node callingMethod = xtaEdge.getNode(EdgeDirection.FROM);
 			Node calledMethod = xtaEdge.getNode(EdgeDirection.TO);
@@ -221,7 +221,7 @@ public class FieldTypeAnalysis extends CGAnalysis {
 	 * @param callEdge
 	 * @param calledMethod
 	 */
-	public static void updateCallGraph(LinkedList<Node> worklist, AtlasSet<Node> cgFTA, Node method, AtlasSet<Node> allocationTypes, Edge callEdge, Node calledMethod) {
+	public static void updateCallGraph(LinkedList<Node> worklist, AtlasSet<Edge> cgFTA, Node method, AtlasSet<Node> allocationTypes, Edge callEdge, Node calledMethod) {
 		if(Common.toQ(cgFTA).betweenStep(Common.toQ(method), Common.toQ(calledMethod)).eval().edges().isEmpty()){
 			cgFTA.add(callEdge);
 			if(!worklist.contains(calledMethod)){
