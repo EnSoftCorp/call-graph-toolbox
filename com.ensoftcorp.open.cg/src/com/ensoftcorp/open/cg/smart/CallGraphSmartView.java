@@ -9,7 +9,7 @@ import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.atlas.ui.scripts.selections.FilteringAtlasSmartViewScript;
 import com.ensoftcorp.atlas.ui.scripts.selections.IResizableScript;
 import com.ensoftcorp.atlas.ui.selection.event.IAtlasSelectionEvent;
-import com.ensoftcorp.open.cg.ui.CallGraphPreferences;
+import com.ensoftcorp.open.cg.preferences.CallGraphPreferences;
 
 public abstract class CallGraphSmartView extends FilteringAtlasSmartViewScript implements IResizableScript {
 

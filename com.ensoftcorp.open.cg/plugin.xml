@@ -2,6 +2,51 @@
 <?eclipse version="3.4"?>
 <plugin>
 
+    <!-- define command some handler extensions -->
+	<extension
+	      point="org.eclipse.ui.handlers">
+	   <handler
+	         commandId="com.ensoftcorp.open.cg.menus.editCallGraphPreferencesCommand"
+	         class="com.ensoftcorp.open.cg.handlers.CallGraphPreferencesHandler">
+	   </handler>
+	</extension>
+	
+	<!-- extend the Atlas Toolbox menu with a new submenu for call graph toolbox -->
+	<extension
+	      point="org.eclipse.ui.menus">
+	   <menuContribution
+	         locationURI="menu:com.ensoftcorp.open.commons.menus.toolbox?after=additions">
+	      <menu
+	            label="Call Graph Construction"
+	            id="com.ensoftcorp.open.cg.menus.cgMenu">
+	         <command
+	               commandId="com.ensoftcorp.open.cg.menus.editCallGraphPreferencesCommand"
+	               label="Edit Preferences"
+	               id="com.ensoftcorp.open.cg.menus.editCallGraphPreferencesCommandMenuItem">
+	         </command>
+	      </menu>
+	   </menuContribution>
+	</extension>
+    
+    <!-- create an initializer extension to initialize preferences -->
+   <extension
+      point="org.eclipse.equinox.preferences.preferences">
+	   <initializer
+	         class="com.ensoftcorp.open.cg.preferences.CallGraphPreferences">
+	   </initializer>
+	</extension>
+   
+   <!-- create a preferences menu item for call graph toolbox -->
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="com.ensoftcorp.open.cg.ui.CallGraphPreferencesPage"
+            id="com.ensoftcorp.open.cg.ui.preferences"
+            name="Call Graph Construction">
+      </page>
+   </extension>
+
+	<!-- add some smart view extensions for each call graph construction algorithm -->
     <extension
          point="com.ensoftcorp.atlas.ui.smartViewScript">
       <script
@@ -31,15 +76,6 @@
       <script
             class="com.ensoftcorp.open.cg.smart.ZeroCFACallGraphSmartView">
       </script>
-   </extension>
-   
-   <extension
-         point="org.eclipse.ui.preferencePages">
-      <page
-            class="com.ensoftcorp.open.cg.ui.CallGraphPreferences"
-            id="com.ensoftcorp.open.cg.ui.preferences"
-            name="Call Graph Construction">
-      </page>
    </extension>
 
 </plugin>

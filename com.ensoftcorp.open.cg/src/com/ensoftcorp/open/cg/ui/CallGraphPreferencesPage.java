@@ -2,6 +2,7 @@ package com.ensoftcorp.open.cg.ui;
 
 import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
+import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
@@ -9,8 +10,9 @@ import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
-import com.ensoftcorp.atlas.core.log.Log;
 import com.ensoftcorp.open.cg.Activator;
+import com.ensoftcorp.open.cg.log.Log;
+import com.ensoftcorp.open.cg.preferences.CallGraphPreferences;
 import com.ensoftcorp.open.commons.utils.MappingUtils;
 
 /**
@@ -18,37 +20,30 @@ import com.ensoftcorp.open.commons.utils.MappingUtils;
  * 
  * @author Ben Holland
  */
-public class CallGraphPreferences extends FieldEditorPreferencePage implements IWorkbenchPreferencePage {
-	
-	// enable/disable call graph construction for libraries
-	public static final String ENABLE_LIBRARY_CALL_GRAPH_CONSTRUCTION_BOOLEAN = "ENABLE_LIBRARY_CALL_GRAPH_CONSTRUCTION_BOOLEAN";
-	public static final String ENABLE_LIBRARY_CALL_GRAPH_CONSTRUCTION_DESCRIPTION = "Enable Library Call Graph Construction";
-	
-	public static boolean isLibraryCallGraphConstructionEnabled(){
-		boolean result = false; // library call graph construction is disabled by default
-		try {
-			result = Activator.getDefault().getPreferenceStore().getBoolean(ENABLE_LIBRARY_CALL_GRAPH_CONSTRUCTION_BOOLEAN);
-		} catch (Exception e){
-			Log.error("Error accessing call graph construction preferences.", e);
-		}
-		return result;
-	}
-	
+public class CallGraphPreferencesPage extends FieldEditorPreferencePage implements IWorkbenchPreferencePage {
+
+	private static final String GENERAL_LOGGING_DESCRIPTION = "Enable General Logging";
+	private static final String LIBRARY_CALL_GRAPH_CONSTRUCTION_DESCRIPTION = "Enable Library Call Graph Construction";
+
 	private static boolean changeListenerAdded = false;
-	
-	public CallGraphPreferences() {
+
+	public CallGraphPreferencesPage() {
 		super(GRID);
 	}
 
 	@Override
 	public void init(IWorkbench workbench) {
-		setPreferenceStore(Activator.getDefault().getPreferenceStore());
+		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
+		setPreferenceStore(preferences);
 		setDescription("Configure preferences for the Call Graph Toolbox plugin.");
-		if(!changeListenerAdded){
+
+		// use to update cached values if user edits a preference
+		if (!changeListenerAdded) {
 			getPreferenceStore().addPropertyChangeListener(new IPropertyChangeListener() {
 				@Override
 				public void propertyChange(org.eclipse.jface.util.PropertyChangeEvent event) {
-					if (event.getProperty() == CallGraphPreferences.ENABLE_LIBRARY_CALL_GRAPH_CONSTRUCTION_BOOLEAN) {
+					CallGraphPreferences.loadPreferences();
+					if (event.getProperty() == CallGraphPreferences.LIBRARY_CALL_GRAPH_CONSTRUCTION) {
 						Display.getDefault().asyncExec(new Runnable(){
 							@Override
 							public void run() {
@@ -69,12 +64,13 @@ public class CallGraphPreferences extends FieldEditorPreferencePage implements I
 				}
 			});
 			changeListenerAdded = true;
-		}	
+		}
 	}
 
 	@Override
 	protected void createFieldEditors() {
-		addField(new BooleanFieldEditor(ENABLE_LIBRARY_CALL_GRAPH_CONSTRUCTION_BOOLEAN, "&" + ENABLE_LIBRARY_CALL_GRAPH_CONSTRUCTION_DESCRIPTION, getFieldEditorParent()));
+		addField(new BooleanFieldEditor(CallGraphPreferences.GENERAL_LOGGING, "&" + GENERAL_LOGGING_DESCRIPTION, getFieldEditorParent()));
+		addField(new BooleanFieldEditor(CallGraphPreferences.LIBRARY_CALL_GRAPH_CONSTRUCTION, "&" + LIBRARY_CALL_GRAPH_CONSTRUCTION_DESCRIPTION, getFieldEditorParent()));
 	}
 
 }

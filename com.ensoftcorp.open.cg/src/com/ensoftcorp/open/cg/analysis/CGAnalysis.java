@@ -1,8 +1,8 @@
 package com.ensoftcorp.open.cg.analysis;
 
-import com.ensoftcorp.atlas.core.log.Log;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
+import com.ensoftcorp.open.cg.log.Log;
 
 public abstract class CGAnalysis {
 
