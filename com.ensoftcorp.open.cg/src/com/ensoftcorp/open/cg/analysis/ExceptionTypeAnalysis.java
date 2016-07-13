@@ -2,8 +2,9 @@ package com.ensoftcorp.open.cg.analysis;
 
 import java.util.LinkedList;
 
-import com.ensoftcorp.atlas.core.db.graph.GraphElement;
+import com.ensoftcorp.atlas.core.db.graph.Edge;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
+import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
@@ -13,8 +14,8 @@ import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
 import com.ensoftcorp.open.cg.utils.ExceptionAnalysis;
-import com.ensoftcorp.open.toolbox.commons.SetDefinitions;
-import com.ensoftcorp.open.toolbox.commons.analysis.DiscoverMainMethods;
+import com.ensoftcorp.open.commons.analysis.DiscoverMainMethods;
+import com.ensoftcorp.open.commons.analysis.SetDefinitions;
 
 /**
  * Performs an Exception Type Analysis (ETA), which is a modification
@@ -73,17 +74,17 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
 		
 		// create a worklist and add the root method set
-		LinkedList<GraphElement> worklist = new LinkedList<GraphElement>();
+		LinkedList<Node> worklist = new LinkedList<Node>();
 
-		AtlasSet<GraphElement> mainMethods = DiscoverMainMethods.findMainMethods().eval().nodes();
+		AtlasSet<Node> mainMethods = DiscoverMainMethods.findMainMethods().eval().nodes();
 		if(libraryCallGraphConstructionEnabled || mainMethods.isEmpty()){
 			if(!libraryCallGraphConstructionEnabled && mainMethods.isEmpty()){
 				Log.warning("Application does not contain a main method, building a call graph using library assumptions.");
 			}
 			// if we are building a call graph for a library there is no main method...
 			// a nice balance is to start with all public methods in the library
-			AtlasSet<GraphElement> rootMethods = SetDefinitions.app().nodesTaggedWithAll(XCSG.publicVisibility, XCSG.Method).eval().nodes();
-			for(GraphElement method : rootMethods){
+			AtlasSet<Node> rootMethods = SetDefinitions.app().nodesTaggedWithAll(XCSG.publicVisibility, XCSG.Method).eval().nodes();
+			for(Node method : rootMethods){
 				worklist.add(method);
 			}
 		} else {
@@ -93,20 +94,20 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 			if(mainMethods.size() > 1){
 				Log.warning("Application contains multiple main methods. The call graph may contain unexpected conservative edges as a result.");
 			}
-			for(GraphElement mainMethod : mainMethods){
+			for(Node mainMethod : mainMethods){
 				worklist.add(mainMethod);
 			}
 		}
 		
 		// initially the ETA based call graph is empty
-		AtlasSet<GraphElement> cgETA = new AtlasHashSet<GraphElement>();
+		AtlasSet<Node> cgETA = new AtlasHashSet<Node>();
 		
 		// iterate until the worklist is empty (in ETA the worklist only contains methods)
 		while(!worklist.isEmpty()){
-			GraphElement method = worklist.removeFirst();
+			Node method = worklist.removeFirst();
 			
 			// we should consider the allocation types instantiated directly in the method
-			AtlasSet<GraphElement> allocationTypes = getAllocationTypesSet(method);
+			AtlasSet<Node> allocationTypes = getAllocationTypesSet(method);
 			if(allocationTypes.isEmpty()){
 				// allocations are contained (declared) within the methods in the method reverse call graph
 				Q methodDeclarations = declarations.forward(Common.toQ(method));
@@ -116,8 +117,8 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 				
 				// we should also include the allocation types of each parent method (in the current ETA call graph)
 				// get compatible parent allocation types
-				AtlasSet<GraphElement> parentMethods = Common.toQ(cgETA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
-				for(GraphElement parentMethod : parentMethods){
+				AtlasSet<Node> parentMethods = Common.toQ(cgETA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
+				for(Node parentMethod : parentMethods){
 					Q parentAllocationTypes = Common.toQ(getAllocationTypesSet(parentMethod));
 					// add the parameter type compatible allocation types
 					allocationTypes.addAll(parentAllocationTypes.eval().nodes());
@@ -129,7 +130,7 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 			Q potentialCatchBlocks = declarations.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
 			Q throwingMethods = declarations.reverse(ExceptionAnalysis.findThrowForCatch(potentialCatchBlocks)).nodesTaggedWithAny(XCSG.Method);
 			throwingMethods = throwingMethods.difference(Common.toQ(method)); // only worried about exceptions that propagate back up the stack
-			for(GraphElement throwingMethod : throwingMethods.eval().nodes()){
+			for(Node throwingMethod : throwingMethods.eval().nodes()){
 				Q throwerAllocationTypes = Common.toQ(getAllocationTypesSet(throwingMethod));
 				// add the parameter type compatible allocation types
 				allocationTypes.addAll(throwerAllocationTypes.eval().nodes());
@@ -140,7 +141,7 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 			Q potentialThrowBlocks = declarations.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
 			Q catchingMethods = declarations.reverse(ExceptionAnalysis.findCatchForThrows(potentialThrowBlocks)).nodesTaggedWithAny(XCSG.Method);
 			catchingMethods = catchingMethods.difference(Common.toQ(method)); // only worried about exceptions that propagate back up the stack
-			for(GraphElement catchingMethod : catchingMethods.eval().nodes()){
+			for(Node catchingMethod : catchingMethods.eval().nodes()){
 				if(getAllocationTypesSet(catchingMethod).addAll(allocationTypes)){
 					if(!worklist.contains(catchingMethod)){
 						worklist.add(catchingMethod);
@@ -151,12 +152,12 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 			// next get a set of all the CHA call edges from the method and create an ETA edge
 			// from the method to the target method in the CHA call graph if the target methods
 			// type is compatible with the feasibly allocated types that would reach this method
-			AtlasSet<GraphElement> callEdges = cgCHA.forwardStep(Common.toQ(method)).eval().edges();
-			for(GraphElement callEdge : callEdges){
+			AtlasSet<Edge> callEdges = cgCHA.forwardStep(Common.toQ(method)).eval().edges();
+			for(Edge callEdge : callEdges){
 				// add static dispatches to the eta call graph
 				// includes called methods marked static and constructors
-				GraphElement calledMethod = callEdge.getNode(EdgeDirection.TO);
-				GraphElement callingMethod = callEdge.getNode(EdgeDirection.FROM);
+				Node calledMethod = callEdge.getNode(EdgeDirection.TO);
+				Node callingMethod = callEdge.getNode(EdgeDirection.FROM);
 				Q callingStaticDispatches = Common.toQ(callingMethod).contained().nodesTaggedWithAny(XCSG.StaticDispatchCallSite);
 				boolean isStaticDispatch = !cha.getPerControlFlowGraph().predecessors(Common.toQ(calledMethod)).intersection(callingStaticDispatches).eval().nodes().isEmpty();
 				if(isStaticDispatch || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
@@ -178,12 +179,12 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 		// just tag each edge in the ETA call graph with "ETA" to distinguish it
 		// from the CHA call graph
 		Q pcfCHA = cha.getPerControlFlowGraph();
-		for(GraphElement xtaEdge : cgETA){
+		for(Node xtaEdge : cgETA){
 			xtaEdge.tag(CALL);
-			GraphElement callingMethod = xtaEdge.getNode(EdgeDirection.FROM);
-			GraphElement calledMethod = xtaEdge.getNode(EdgeDirection.TO);
+			Node callingMethod = xtaEdge.getNode(EdgeDirection.FROM);
+			Node calledMethod = xtaEdge.getNode(EdgeDirection.TO);
 			Q callsites = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.CallSite);
-			for(GraphElement perControlFlowEdge : pcfCHA.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
+			for(Edge perControlFlowEdge : pcfCHA.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
 				perControlFlowEdge.tag(PER_CONTROL_FLOW);
 			}
 		}	
@@ -197,11 +198,11 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 	 * @return 
 	 */
 	@SuppressWarnings("unchecked")
-	private static AtlasSet<GraphElement> getAllocationTypesSet(GraphElement ge){
+	private static AtlasSet<Node> getAllocationTypesSet(Node ge){
 		if(ge.hasAttr(TYPES_SET)){
-			return (AtlasSet<GraphElement>) ge.getAttr(TYPES_SET);
+			return (AtlasSet<Node>) ge.getAttr(TYPES_SET);
 		} else {
-			AtlasSet<GraphElement> types = new AtlasHashSet<GraphElement>();
+			AtlasSet<Node> types = new AtlasHashSet<Node>();
 			ge.putAttr(TYPES_SET, types);
 			return types;
 		}

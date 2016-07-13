@@ -11,7 +11,7 @@ import org.eclipse.ui.IWorkbenchPreferencePage;
 
 import com.ensoftcorp.atlas.core.log.Log;
 import com.ensoftcorp.open.cg.Activator;
-import com.ensoftcorp.open.toolbox.commons.utils.MappingUtils;
+import com.ensoftcorp.open.commons.utils.MappingUtils;
 
 /**
  * UI for setting call graph construction preferences

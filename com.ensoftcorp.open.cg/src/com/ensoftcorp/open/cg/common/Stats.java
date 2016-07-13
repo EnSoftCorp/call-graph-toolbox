@@ -7,6 +7,7 @@ import java.text.DecimalFormat;
 
 import com.ensoftcorp.atlas.core.db.graph.Graph;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement;
+import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
@@ -65,7 +66,7 @@ public class Stats {
 		double time = cga.run();
 		Q cg = cga.getCallGraph().retainEdges();
 		Graph cgGraph = cg.eval();
-		AtlasSet<GraphElement> callsites = Common.universe().nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
+		AtlasSet<Node> callsites = Common.universe().nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
 		
 		DecimalFormat decimalFormat = new DecimalFormat("#.##");
 		fw.write(cga.getClass().getSimpleName() + "," + decimalFormat.format(time)
@@ -78,15 +79,15 @@ public class Stats {
 		fw.flush();
 	}
 
-	private static AtlasSet<GraphElement> getStaticDispatches(AtlasSet<GraphElement> callsites){
+	private static AtlasSet<Node> getStaticDispatches(AtlasSet<Node> callsites){
 		return Common.toQ(callsites).nodesTaggedWithAny(XCSG.StaticDispatchCallSite).eval().nodes();
 	}
 	
-	private static AtlasSet<GraphElement> getDynamicDispatches(AtlasSet<GraphElement> callsites){
+	private static AtlasSet<Node> getDynamicDispatches(AtlasSet<Node> callsites){
 		return Common.toQ(callsites).nodesTaggedWithAny(XCSG.DynamicDispatchCallSite).eval().nodes();
 	}
 	
-	private static Long getMaxDynamicDispatchesPerCallsite(AtlasSet<GraphElement> callsites, CGAnalysis cga){
+	private static Long getMaxDynamicDispatchesPerCallsite(AtlasSet<Node> callsites, CGAnalysis cga){
 		long max = Long.MIN_VALUE;
 		for(GraphElement callsite : getDynamicDispatches(callsites)){
 			long dispatches = cga.getPerControlFlowGraph().successors(Common.toQ(callsite)).eval().nodes().size();
@@ -97,9 +98,9 @@ public class Stats {
 		return max;
 	}
 	
-	private static Long getMinDynamicDispatchesPerCallsite(AtlasSet<GraphElement> callsites, CGAnalysis cga){
+	private static Long getMinDynamicDispatchesPerCallsite(AtlasSet<Node> callsites, CGAnalysis cga){
 		long min = Long.MAX_VALUE;
-		for(GraphElement callsite : getDynamicDispatches(callsites)){
+		for(Node callsite : getDynamicDispatches(callsites)){
 			long dispatches = cga.getPerControlFlowGraph().successors(Common.toQ(callsite)).eval().nodes().size();
 			if(dispatches < min){
 				min = dispatches;
@@ -108,10 +109,10 @@ public class Stats {
 		return min;
 	}
 	
-	private static Double getAverageDynamicDispatchesPerCallsite(AtlasSet<GraphElement> callsites, CGAnalysis cga){
+	private static Double getAverageDynamicDispatchesPerCallsite(AtlasSet<Node> callsites, CGAnalysis cga){
 		double average = 0;
 		callsites = getDynamicDispatches(callsites);
-		for(GraphElement callsite : callsites){
+		for(Node callsite : callsites){
 			long dispatches = cga.getPerControlFlowGraph().successors(Common.toQ(callsite)).eval().nodes().size();
 			average += dispatches;
 		}

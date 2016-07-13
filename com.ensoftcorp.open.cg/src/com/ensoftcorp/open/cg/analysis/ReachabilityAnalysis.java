@@ -1,10 +1,10 @@
 package com.ensoftcorp.open.cg.analysis;
 
-import com.ensoftcorp.atlas.core.db.graph.GraphElement;
+import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
-import com.ensoftcorp.atlas.core.query.Attr.Node;
+import com.ensoftcorp.atlas.core.query.Attr;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.script.CommonQueries;
@@ -59,23 +59,23 @@ public class ReachabilityAnalysis extends CGAnalysis {
 		Q allTypes = Common.universe().nodesTaggedWithAny(XCSG.Type);
 		
 		// for each method
-		AtlasSet<GraphElement> methods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
-		for(GraphElement method : methods){
+		AtlasSet<Node> methods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
+		for(Node method : methods){
 			// for each callsite
-			AtlasSet<GraphElement> callsites = declarations.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
-			for(GraphElement callsite : callsites){
+			AtlasSet<Node> callsites = declarations.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
+			for(Node callsite : callsites){
 				if(callsite.taggedWith(XCSG.StaticDispatchCallSite)){
 					// static dispatches (calls to constructors or methods marked as static) can be resolved immediately
-					GraphElement targetMethod = invokedFunctionEdges.successors(Common.toQ(callsite)).eval().nodes().getFirst();
+					Node targetMethod = invokedFunctionEdges.successors(Common.toQ(callsite)).eval().nodes().getFirst();
 					CallGraphConstruction.createCallEdge(callsite, method, targetMethod, CALL, PER_CONTROL_FLOW);
 				} else if(callsite.taggedWith(XCSG.DynamicDispatchCallSite)){
 					// dynamic dispatches require additional analysis to be resolved
 					
 					// in RA we just say if the method signature being called matches a method then add a call edge
-					AtlasSet<GraphElement> reachableMethods = getReachableMethods(callsite, allTypes);
+					AtlasSet<Node> reachableMethods = getReachableMethods(callsite, allTypes);
 					
 					// create a call edge from the method to each matching method
-					for(GraphElement reachableMethod : reachableMethods){
+					for(Node reachableMethod : reachableMethods){
 						// dispatches cannot happen to abstract methods
 						if(reachableMethod.taggedWith(XCSG.abstractMethod)){
 							if(libraryCallGraphConstructionEnabled){
@@ -100,7 +100,7 @@ public class ReachabilityAnalysis extends CGAnalysis {
 	 * @param callsite
 	 * @return
 	 */
-	public static AtlasSet<GraphElement> getReachableMethods(GraphElement callsite, Q typesToSearch){
+	public static AtlasSet<Node> getReachableMethods(Node callsite, Q typesToSearch){
 		Q containsEdges = Common.universe().edgesTaggedWithAny(XCSG.Contains);
 		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
 		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
@@ -111,7 +111,7 @@ public class ReachabilityAnalysis extends CGAnalysis {
 		// first create a set of candidate methods to select from
 		// note: specifically including abstract methods so we can use them later for library construction
 		Q candidateMethods = containsEdges.forwardStep(typesToSearch).nodesTaggedWithAny(XCSG.Method)
-				.difference(Common.universe().nodesTaggedWithAny(XCSG.Constructor, Node.IS_STATIC));
+				.difference(Common.universe().nodesTaggedWithAny(XCSG.Constructor, Attr.Node.IS_STATIC));
 		
 		// match the method name
 		String methodName = callsite.getAttr(XCSG.name).toString();
@@ -124,23 +124,23 @@ public class ReachabilityAnalysis extends CGAnalysis {
 		matchingMethods = returnsEdges.predecessors(returnType).intersection(matchingMethods);
 		
 		// get the callsite parameters to match
-		AtlasSet<GraphElement> passedParameters = parameterPassToEdges.predecessors(Common.toQ(callsite)).eval().nodes();
+		AtlasSet<Node> passedParameters = parameterPassToEdges.predecessors(Common.toQ(callsite)).eval().nodes();
 
-		AtlasSet<GraphElement> result = new AtlasHashSet<GraphElement>();
+		AtlasSet<Node> result = new AtlasHashSet<Node>();
 		
 		// at least the method signature is reachable
 		result.add(methodSignature.eval().nodes().getFirst()); 
 		
 		// filter out methods that do not take the exact same number and type of parameters
-		for(GraphElement matchingMethod : matchingMethods.eval().nodes()){
+		for(Node matchingMethod : matchingMethods.eval().nodes()){
 			// check if the number of parameters passed is the same size as the number of parameters expected
-			AtlasSet<GraphElement> candidateMethodParameters = CommonQueries.methodParameter(Common.toQ(matchingMethod)).eval().nodes();
+			AtlasSet<Node> candidateMethodParameters = CommonQueries.methodParameter(Common.toQ(matchingMethod)).eval().nodes();
 			if(passedParameters.size() == candidateMethodParameters.size()){
 				// check that each parameter passed type is compatible with the expected parameter type
 				boolean paramsMatch = true;
 				for(int i=0; i<passedParameters.size(); i++){
-					GraphElement passedParameter = Common.toQ(passedParameters).selectNode(XCSG.parameterIndex, i).eval().nodes().getFirst();
-					GraphElement candidateMethodParameter = Common.toQ(candidateMethodParameters).selectNode(XCSG.parameterIndex, i).eval().nodes().getFirst();
+					Node passedParameter = Common.toQ(passedParameters).selectNode(XCSG.parameterIndex, i).eval().nodes().getFirst();
+					Node candidateMethodParameter = Common.toQ(candidateMethodParameters).selectNode(XCSG.parameterIndex, i).eval().nodes().getFirst();
 					Q passedParameterType = typeOfEdges.successors(Common.toQ(passedParameter));
 					Q methodParameterType = typeOfEdges.successors(Common.toQ(candidateMethodParameter));
 					// passed parameter types can be subtypes of the parameter's declared types

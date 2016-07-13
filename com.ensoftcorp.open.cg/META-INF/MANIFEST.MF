@@ -1,14 +1,15 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: CG Toolbox
+Bundle-Name: Call Graph Toolbox
 Bundle-SymbolicName: com.ensoftcorp.open.cg;singleton:=true
-Bundle-Version: 2.7.3.qualifier
+Bundle-Version: 3.0.8.qualifier
 Bundle-Vendor: EnSoft Corp.
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: 
  org.eclipse.debug.ui,
- com.ensoftcorp.open.toolbox.commons;bundle-version="2.7.3";visibility:=reexport,
- com.ensoftcorp.open.pointsto;bundle-version="2.7.3";visibility:=reexport
+ com.ensoftcorp.open.commons;bundle-version="3.0.8";visibility:=reexport,
+ com.ensoftcorp.open.pointsto;bundle-version="3.0.8";visibility:=reexport,
+ com.ensoftcorp.atlas.core
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .
 Bundle-Activator: com.ensoftcorp.open.cg.Activator

@@ -2,8 +2,9 @@ package com.ensoftcorp.open.cg.analysis;
 
 import java.util.LinkedList;
 
-import com.ensoftcorp.atlas.core.db.graph.GraphElement;
+import com.ensoftcorp.atlas.core.db.graph.Edge;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
+import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
@@ -14,9 +15,9 @@ import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.atlas.java.core.script.CommonQueries;
 import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
 import com.ensoftcorp.open.cg.utils.ExceptionAnalysis;
-import com.ensoftcorp.open.toolbox.commons.SetDefinitions;
-import com.ensoftcorp.open.toolbox.commons.analysis.DiscoverMainMethods;
-import com.ensoftcorp.open.toolbox.commons.analysis.utils.StandardQueries;
+import com.ensoftcorp.open.commons.analysis.DiscoverMainMethods;
+import com.ensoftcorp.open.commons.analysis.SetDefinitions;
+import com.ensoftcorp.open.commons.analysis.utils.StandardQueries;
 
 /**
  * Performs a Hybrid Type Analysis (XTA), which is a modification
@@ -78,17 +79,17 @@ public class HybridTypeAnalysis extends CGAnalysis {
 		Q dataFlowEdges = Common.universe().edgesTaggedWithAny(XCSG.DataFlow_Edge);
 		
 		// create a worklist and add the root method set
-		LinkedList<GraphElement> worklist = new LinkedList<GraphElement>();
+		LinkedList<Node> worklist = new LinkedList<Node>();
 
-		AtlasSet<GraphElement> mainMethods = DiscoverMainMethods.findMainMethods().eval().nodes();
+		AtlasSet<Node> mainMethods = DiscoverMainMethods.findMainMethods().eval().nodes();
 		if(libraryCallGraphConstructionEnabled || mainMethods.isEmpty()){
 			if(!libraryCallGraphConstructionEnabled && mainMethods.isEmpty()){
 				Log.warning("Application does not contain a main method, building a call graph using library assumptions.");
 			}
 			// if we are building a call graph for a library there is no main method...
 			// a nice balance is to start with all public methods in the library
-			AtlasSet<GraphElement> rootMethods = SetDefinitions.app().nodesTaggedWithAll(XCSG.publicVisibility, XCSG.Method).eval().nodes();
-			for(GraphElement method : rootMethods){
+			AtlasSet<Node> rootMethods = SetDefinitions.app().nodesTaggedWithAll(XCSG.publicVisibility, XCSG.Method).eval().nodes();
+			for(Node method : rootMethods){
 				worklist.add(method);
 			}
 		} else {
@@ -98,26 +99,26 @@ public class HybridTypeAnalysis extends CGAnalysis {
 			if(mainMethods.size() > 1){
 				Log.warning("Application contains multiple main methods. The call graph may contain unexpected conservative edges as a result.");
 			}
-			for(GraphElement mainMethod : mainMethods){
+			for(Node mainMethod : mainMethods){
 				worklist.add(mainMethod);
 			}
 		}
 		
 		// initially the XTA based call graph is empty
-		AtlasSet<GraphElement> cgXTA = new AtlasHashSet<GraphElement>();
+		AtlasSet<Node> cgXTA = new AtlasHashSet<Node>();
 		
 		// iterate until the worklist is empty
 		// in FTA and its derivatives the worklist could contain methods or fields
 		while(!worklist.isEmpty()){
-			GraphElement workitem = worklist.removeFirst();
+			Node workitem = worklist.removeFirst();
 			if(workitem.taggedWith(XCSG.Method)){
-				GraphElement method = workitem;
+				Node method = workitem;
 				
 				// we should consider the allocation types instantiated directly in the method
 				// note even if the allocation set is not empty here, this may be the first time
 				// we've reached this method because information could have been propagated from
 				// a field first
-				AtlasSet<GraphElement> allocationTypes = getAllocationTypesSet(method);
+				AtlasSet<Node> allocationTypes = getAllocationTypesSet(method);
 				if(allocationTypes.isEmpty()){
 					// allocations are contained (declared) within the methods in the method reverse call graph
 					Q methodDeclarations = declarations.forward(Common.toQ(method));
@@ -134,8 +135,8 @@ public class HybridTypeAnalysis extends CGAnalysis {
 					Q parameterTypes = typeOfEdges.successors(parameters);
 					Q parameterTypeHierarchy = typeHierarchy.reverse(parameterTypes);
 					// get compatible parent allocation types
-					AtlasSet<GraphElement> parentMethods = Common.toQ(cgXTA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
-					for(GraphElement parentMethod : parentMethods){
+					AtlasSet<Node> parentMethods = Common.toQ(cgXTA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
+					for(Node parentMethod : parentMethods){
 						Q parentAllocationTypes = Common.toQ(getAllocationTypesSet(parentMethod));
 						// remove the parent allocation types that could not be passed through the method's parameters
 						parentAllocationTypes = parameterTypeHierarchy.intersection(parentAllocationTypes);
@@ -153,17 +154,17 @@ public class HybridTypeAnalysis extends CGAnalysis {
 					// In FTA any method in the method or method's parents that reads from a field 
 					// can have a reference to the allocations that occur in any another method that writes to that field
 					Q reachableMethodDeclarations = declarations.forward(Common.toQ(method).union(Common.toQ(parentMethods)));
-					AtlasSet<GraphElement> readFields = dataFlowEdges.predecessors(reachableMethodDeclarations).nodesTaggedWithAny(XCSG.Field).eval().nodes();
-					for(GraphElement readField : readFields){
-						AtlasSet<GraphElement> fieldAllocationTypes = getAllocationTypesSet(readField);
+					AtlasSet<Node> readFields = dataFlowEdges.predecessors(reachableMethodDeclarations).nodesTaggedWithAny(XCSG.Field).eval().nodes();
+					for(Node readField : readFields){
+						AtlasSet<Node> fieldAllocationTypes = getAllocationTypesSet(readField);
 						allocationTypes.addAll(fieldAllocationTypes);
 					}
 					
 					// In FTA if the method writes to a field then all the compatible allocated types available to the method
 					// can be propagated to the field
-					AtlasSet<GraphElement> writtenFields = dataFlowEdges.successors(reachableMethodDeclarations).nodesTaggedWithAny(XCSG.Field).eval().nodes();
-					for(GraphElement writtenField : writtenFields){
-						AtlasSet<GraphElement> fieldAllocationTypes = getAllocationTypesSet(writtenField);
+					AtlasSet<Node> writtenFields = dataFlowEdges.successors(reachableMethodDeclarations).nodesTaggedWithAny(XCSG.Field).eval().nodes();
+					for(Node writtenField : writtenFields){
+						AtlasSet<Node> fieldAllocationTypes = getAllocationTypesSet(writtenField);
 						Q compatibleTypes = Common.toQ(allocationTypes).intersection(typeHierarchy.reverse(typeOfEdges.successors(Common.toQ(writtenField))));
 						if(fieldAllocationTypes.addAll(compatibleTypes.eval().nodes())){
 							if(!worklist.contains(writtenField)){
@@ -178,7 +179,7 @@ public class HybridTypeAnalysis extends CGAnalysis {
 				Q potentialCatchBlocks = declarations.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
 				Q throwingMethods = declarations.reverse(ExceptionAnalysis.findThrowForCatch(potentialCatchBlocks)).nodesTaggedWithAny(XCSG.Method);
 				throwingMethods = throwingMethods.difference(Common.toQ(method)); // only worried about exceptions that propagate back up the stack
-				for(GraphElement throwingMethod : throwingMethods.eval().nodes()){
+				for(Node throwingMethod : throwingMethods.eval().nodes()){
 					Q throwerAllocationTypes = Common.toQ(getAllocationTypesSet(throwingMethod));
 					// add the parameter type compatible allocation types
 					allocationTypes.addAll(throwerAllocationTypes.eval().nodes());
@@ -189,7 +190,7 @@ public class HybridTypeAnalysis extends CGAnalysis {
 				Q potentialThrowBlocks = declarations.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
 				Q catchingMethods = declarations.reverse(ExceptionAnalysis.findCatchForThrows(potentialThrowBlocks)).nodesTaggedWithAny(XCSG.Method);
 				catchingMethods = catchingMethods.difference(Common.toQ(method)); // only worried about exceptions that propagate back up the stack
-				for(GraphElement catchingMethod : catchingMethods.eval().nodes()){
+				for(Node catchingMethod : catchingMethods.eval().nodes()){
 					if(getAllocationTypesSet(catchingMethod).addAll(allocationTypes)){
 						if(!worklist.contains(catchingMethod)){
 							worklist.add(catchingMethod);
@@ -200,12 +201,12 @@ public class HybridTypeAnalysis extends CGAnalysis {
 				// next get a set of all the CHA call edges from the method and create an XTA edge
 				// from the method to the target method in the CHA call graph if the target methods
 				// type is compatible with the feasibly allocated types that would reach this method
-				AtlasSet<GraphElement> callEdges = cgCHA.forwardStep(Common.toQ(method)).eval().edges();
-				for(GraphElement callEdge : callEdges){
+				AtlasSet<Edge> callEdges = cgCHA.forwardStep(Common.toQ(method)).eval().edges();
+				for(Edge callEdge : callEdges){
 					// add static dispatches to the fta call graph
 					// includes called methods marked static and constructors
-					GraphElement calledMethod = callEdge.getNode(EdgeDirection.TO);
-					GraphElement callingMethod = callEdge.getNode(EdgeDirection.FROM);
+					Node calledMethod = callEdge.getNode(EdgeDirection.TO);
+					Node callingMethod = callEdge.getNode(EdgeDirection.FROM);
 					Q callingStaticDispatches = Common.toQ(callingMethod).contained().nodesTaggedWithAny(XCSG.StaticDispatchCallSite);
 					boolean isStaticDispatch = !cha.getPerControlFlowGraph().predecessors(Common.toQ(calledMethod)).intersection(callingStaticDispatches).eval().nodes().isEmpty();
 					if(isStaticDispatch || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
@@ -225,11 +226,11 @@ public class HybridTypeAnalysis extends CGAnalysis {
 				
 			} else {
 				// new allocation types were propagated to a field, which means methods that read from the field may get new allocation types
-				GraphElement field = workitem;
-				AtlasSet<GraphElement> fieldAllocationTypes = getAllocationTypesSet(field);
-				AtlasSet<GraphElement> readingMethods = StandardQueries.getContainingMethods(dataFlowEdges.successors(Common.toQ(field))).eval().nodes();
-				for(GraphElement readingMethod : readingMethods){
-					AtlasSet<GraphElement> readingMethodAllocationTypes = getAllocationTypesSet(readingMethod);
+				Node field = workitem;
+				AtlasSet<Node> fieldAllocationTypes = getAllocationTypesSet(field);
+				AtlasSet<Node> readingMethods = StandardQueries.getContainingMethods(dataFlowEdges.successors(Common.toQ(field))).eval().nodes();
+				for(Node readingMethod : readingMethods){
+					AtlasSet<Node> readingMethodAllocationTypes = getAllocationTypesSet(readingMethod);
 					if(readingMethodAllocationTypes.addAll(fieldAllocationTypes)){
 						if(!worklist.contains(readingMethod)){
 							worklist.add(readingMethod);
@@ -242,12 +243,12 @@ public class HybridTypeAnalysis extends CGAnalysis {
 		// just tag each edge in the XTA call graph with "XTA" to distinguish it
 		// from the CHA call graph
 		Q pcfCHA = cha.getPerControlFlowGraph();
-		for(GraphElement xtaEdge : cgXTA){
+		for(Node xtaEdge : cgXTA){
 			xtaEdge.tag(CALL);
-			GraphElement callingMethod = xtaEdge.getNode(EdgeDirection.FROM);
-			GraphElement calledMethod = xtaEdge.getNode(EdgeDirection.TO);
+			Node callingMethod = xtaEdge.getNode(EdgeDirection.FROM);
+			Node calledMethod = xtaEdge.getNode(EdgeDirection.TO);
 			Q callsites = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.CallSite);
-			for(GraphElement perControlFlowEdge : pcfCHA.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
+			for(Edge perControlFlowEdge : pcfCHA.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
 				perControlFlowEdge.tag(PER_CONTROL_FLOW);
 			}
 		}	
@@ -261,12 +262,12 @@ public class HybridTypeAnalysis extends CGAnalysis {
 	 * @return 
 	 */
 	@SuppressWarnings("unchecked")
-	private static AtlasSet<GraphElement> getAllocationTypesSet(GraphElement ge){
-		if(ge.hasAttr(TYPES_SET)){
-			return (AtlasSet<GraphElement>) ge.getAttr(TYPES_SET);
+	private static AtlasSet<Node> getAllocationTypesSet(Node node){
+		if(node.hasAttr(TYPES_SET)){
+			return (AtlasSet<Node>) node.getAttr(TYPES_SET);
 		} else {
-			AtlasSet<GraphElement> types = new AtlasHashSet<GraphElement>();
-			ge.putAttr(TYPES_SET, types);
+			AtlasSet<Node> types = new AtlasHashSet<Node>();
+			node.putAttr(TYPES_SET, types);
 			return types;
 		}
 	}

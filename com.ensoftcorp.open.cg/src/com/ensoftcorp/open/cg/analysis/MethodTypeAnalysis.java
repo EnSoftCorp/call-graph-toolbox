@@ -2,8 +2,9 @@ package com.ensoftcorp.open.cg.analysis;
 
 import java.util.LinkedList;
 
-import com.ensoftcorp.atlas.core.db.graph.GraphElement;
+import com.ensoftcorp.atlas.core.db.graph.Edge;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
+import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
@@ -13,8 +14,8 @@ import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.atlas.java.core.script.CommonQueries;
 import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
-import com.ensoftcorp.open.toolbox.commons.SetDefinitions;
-import com.ensoftcorp.open.toolbox.commons.analysis.DiscoverMainMethods;
+import com.ensoftcorp.open.commons.analysis.DiscoverMainMethods;
+import com.ensoftcorp.open.commons.analysis.SetDefinitions;
 
 /**
  * Performs a Method Type Analysis (MTA), which is a modification
@@ -75,17 +76,17 @@ public class MethodTypeAnalysis extends CGAnalysis {
 		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
 		
 		// create a worklist and add the root method set
-		LinkedList<GraphElement> worklist = new LinkedList<GraphElement>();
+		LinkedList<Node> worklist = new LinkedList<Node>();
 
-		AtlasSet<GraphElement> mainMethods = DiscoverMainMethods.findMainMethods().eval().nodes();
+		AtlasSet<Node> mainMethods = DiscoverMainMethods.findMainMethods().eval().nodes();
 		if(libraryCallGraphConstructionEnabled || mainMethods.isEmpty()){
 			if(!libraryCallGraphConstructionEnabled && mainMethods.isEmpty()){
 				Log.warning("Application does not contain a main method, building a call graph using library assumptions.");
 			}
 			// if we are building a call graph for a library there is no main method...
 			// a nice balance is to start with all public methods in the library
-			AtlasSet<GraphElement> rootMethods = SetDefinitions.app().nodesTaggedWithAll(XCSG.publicVisibility, XCSG.Method).eval().nodes();
-			for(GraphElement method : rootMethods){
+			AtlasSet<Node> rootMethods = SetDefinitions.app().nodesTaggedWithAll(XCSG.publicVisibility, XCSG.Method).eval().nodes();
+			for(Node method : rootMethods){
 				worklist.add(method);
 			}
 		} else {
@@ -95,20 +96,20 @@ public class MethodTypeAnalysis extends CGAnalysis {
 			if(mainMethods.size() > 1){
 				Log.warning("Application contains multiple main methods. The call graph may contain unexpected conservative edges as a result.");
 			}
-			for(GraphElement mainMethod : mainMethods){
+			for(Node mainMethod : mainMethods){
 				worklist.add(mainMethod);
 			}
 		}
 		
 		// initially the MTA based call graph is empty
-		AtlasSet<GraphElement> cgMTA = new AtlasHashSet<GraphElement>();
+		AtlasSet<Node> cgMTA = new AtlasHashSet<Node>();
 		
 		// iterate until the worklist is empty (in MTA the worklist only contains methods)
 		while(!worklist.isEmpty()){
-			GraphElement method = worklist.removeFirst();
+			Node method = worklist.removeFirst();
 			
 			// our goal is to first build a set of feasible allocation types that could reach this method
-			AtlasSet<GraphElement> allocationTypes = new AtlasHashSet<GraphElement>();
+			AtlasSet<Node> allocationTypes = new AtlasHashSet<Node>();
 			
 			// we should consider the allocation types instantiated directly in the method
 			if(allocationTypes.isEmpty()){
@@ -126,8 +127,8 @@ public class MethodTypeAnalysis extends CGAnalysis {
 				Q parameterTypes = typeOfEdges.successors(parameters);
 				Q parameterTypeHierarchy = typeHierarchy.reverse(parameterTypes);
 				// get compatible parent allocation types
-				AtlasSet<GraphElement> parentMethods = Common.toQ(cgMTA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
-				for(GraphElement parentMethod : parentMethods){
+				AtlasSet<Node> parentMethods = Common.toQ(cgMTA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
+				for(Node parentMethod : parentMethods){
 					Q parentAllocationTypes = Common.toQ(getAllocationTypesSet(parentMethod));
 					// remove the parent allocation types that could not be passed through the method's parameters
 					parentAllocationTypes = parameterTypeHierarchy.intersection(parentAllocationTypes);
@@ -146,12 +147,12 @@ public class MethodTypeAnalysis extends CGAnalysis {
 			// next get a set of all the CHA call edges from the method and create an MTA edge
 			// from the method to the target method in the CHA call graph if the target methods
 			// type is compatible with the feasibly allocated types that would reach this method
-			AtlasSet<GraphElement> callEdges = cgCHA.forwardStep(Common.toQ(method)).eval().edges();
-			for(GraphElement callEdge : callEdges){
+			AtlasSet<Edge> callEdges = cgCHA.forwardStep(Common.toQ(method)).eval().edges();
+			for(Edge callEdge : callEdges){
 				// add static dispatches to the mta call graph
 				// includes called methods marked static and constructors
-				GraphElement calledMethod = callEdge.getNode(EdgeDirection.TO);
-				GraphElement callingMethod = callEdge.getNode(EdgeDirection.FROM);
+				Node calledMethod = callEdge.getNode(EdgeDirection.TO);
+				Node callingMethod = callEdge.getNode(EdgeDirection.FROM);
 				Q callingStaticDispatches = Common.toQ(callingMethod).contained().nodesTaggedWithAny(XCSG.StaticDispatchCallSite);
 				boolean isStaticDispatch = !cha.getPerControlFlowGraph().predecessors(Common.toQ(calledMethod)).intersection(callingStaticDispatches).eval().nodes().isEmpty();
 				if(isStaticDispatch || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
@@ -173,12 +174,12 @@ public class MethodTypeAnalysis extends CGAnalysis {
 		// just tag each edge in the MTA call graph with "MTA" to distinguish it
 		// from the CHA call graph
 		Q pcfCHA = cha.getPerControlFlowGraph();
-		for(GraphElement mtaEdge : cgMTA){
+		for(Node mtaEdge : cgMTA){
 			mtaEdge.tag(CALL);
-			GraphElement callingMethod = mtaEdge.getNode(EdgeDirection.FROM);
-			GraphElement calledMethod = mtaEdge.getNode(EdgeDirection.TO);
+			Node callingMethod = mtaEdge.getNode(EdgeDirection.FROM);
+			Node calledMethod = mtaEdge.getNode(EdgeDirection.TO);
 			Q callsites = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.CallSite);
-			for(GraphElement perControlFlowEdge : pcfCHA.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
+			for(Edge perControlFlowEdge : pcfCHA.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
 				perControlFlowEdge.tag(PER_CONTROL_FLOW);
 			}
 		}	
@@ -192,11 +193,11 @@ public class MethodTypeAnalysis extends CGAnalysis {
 	 * @return 
 	 */
 	@SuppressWarnings("unchecked")
-	private static AtlasSet<GraphElement> getAllocationTypesSet(GraphElement ge){
+	private static AtlasSet<Node> getAllocationTypesSet(Node ge){
 		if(ge.hasAttr(TYPES_SET)){
-			return (AtlasSet<GraphElement>) ge.getAttr(TYPES_SET);
+			return (AtlasSet<Node>) ge.getAttr(TYPES_SET);
 		} else {
-			AtlasSet<GraphElement> types = new AtlasHashSet<GraphElement>();
+			AtlasSet<Node> types = new AtlasHashSet<Node>();
 			ge.putAttr(TYPES_SET, types);
 			return types;
 		}

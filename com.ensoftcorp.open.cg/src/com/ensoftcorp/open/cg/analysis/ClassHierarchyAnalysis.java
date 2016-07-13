@@ -1,9 +1,9 @@
 package com.ensoftcorp.open.cg.analysis;
 
 import com.ensoftcorp.atlas.core.db.graph.Graph;
-import com.ensoftcorp.atlas.core.db.graph.GraphElement;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.NodeDirection;
+import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Q;
@@ -59,18 +59,18 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 	private Q identityPassedToEdges = Common.universe().edgesTaggedWithAny(XCSG.IdentityPassedTo);
 	private Q dataFlowEdges = Common.universe().edgesTaggedWithAny(XCSG.DataFlow_Edge);
 	private Graph methodSignatureGraph = Common.universe().edgesTaggedWithAny(XCSG.InvokedSignature).eval();
-	private AtlasSet<GraphElement> methods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
+	private AtlasSet<Node> methods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
 	
 	@Override
 	protected void runAnalysis() {
 		// for each method
-		for(GraphElement method : methods){
+		for(Node method : methods){
 			// for each callsite
-			AtlasSet<GraphElement> callsites = containsEdges.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
-			for(GraphElement callsite : callsites){
+			AtlasSet<Node> callsites = containsEdges.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
+			for(Node callsite : callsites){
 				if(callsite.taggedWith(XCSG.StaticDispatchCallSite)){
 					// static dispatches (calls to constructors or methods marked as static) can be resolved immediately
-					GraphElement targetMethod = invokedFunctionEdges.successors(Common.toQ(callsite)).eval().nodes().getFirst();
+					Node targetMethod = invokedFunctionEdges.successors(Common.toQ(callsite)).eval().nodes().getFirst();
 					CallGraphConstruction.createCallEdge(callsite, method, targetMethod, CALL, PER_CONTROL_FLOW);
 				} else if(callsite.taggedWith(XCSG.DynamicDispatchCallSite)){
 					// dynamic dispatches require additional analysis to be resolved
@@ -85,7 +85,7 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 					// the nearest method definition is the method definition closest to the declared type (including
 					// the declared type itself) while traversing from declared type to Object on the descendant path
 					// but an easier way to get this is to use Atlas' InvokedSignature edge to get the nearest method definition
-					GraphElement methodSignature = methodSignatureGraph.edges(callsite, NodeDirection.OUT).getFirst().getNode(EdgeDirection.TO);
+					Node methodSignature = methodSignatureGraph.edges(callsite, NodeDirection.OUT).getFirst().getNode(EdgeDirection.TO);
 					Q resolvedDispatches = Common.toQ(methodSignature);
 					
 					// subtypes of the declared type can override the nearest target method definition, 
@@ -122,7 +122,7 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 					}
 					
 					// add a call edge to each resolved concrete dispatch
-					for(GraphElement resolvedDispatch : resolvedDispatches.eval().nodes()){
+					for(Node resolvedDispatch : resolvedDispatches.eval().nodes()){
 						CallGraphConstruction.createCallEdge(callsite, method, resolvedDispatch, CALL, PER_CONTROL_FLOW);
 					}
 					
