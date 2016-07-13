@@ -15,4 +15,4 @@ Bundle-ClassPath: .
 Bundle-Activator: com.ensoftcorp.open.cg.Activator
 Export-Package: com.ensoftcorp.open.cg.analysis;uses:="com.ensoftcorp.atlas.core.query",
  com.ensoftcorp.open.cg.common,
- com.ensoftcorp.open.cg.ui
+ com.ensoftcorp.open.cg.preferences
