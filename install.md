@@ -21,6 +21,8 @@ Follow the steps below to install the Call Graph Toolbox plugin from the Eclipse
 6. Read and accept the license agreements, then click `Finish`. If you get a security warning saying that the authenticity or validity of the software can't be established, click `OK`.
 7. When the installation completes, restart Eclipse.
 
+**Note:** For legacy Atlas 2.x updates use the "[https://ensoftcorp.github.io/call-graph-toolbox/updates/](https://ensoftcorp.github.io/call-graph-toolbox/updates/)" update site.
+
 ## Installing from Source
 If you want to install from source for bleeding edge changes, first grab a copy of the [source](https://github.com/EnSoftCorp/call-graph-toolbox) repository. In the Eclipse workspace, import the `com.ensoftcorp.open.cg` Eclipse project located in the source repository.  Right click on the project and select `Export`.  Select `Plug-in Development` &gt; `Deployable plug-ins and fragments`.  Select the `Install into host. Repository:` radio box and click `Finish`.  Press `OK` for the notice about unsigned software.  Once Eclipse restarts the plugin will be installed and it is advisable to close or remove the `com.ensoftcorp.open.cg` project from the workspace.
 
@@ -29,7 +31,7 @@ Note that version numbers are based off [Atlas](http://www.ensoftcorp.com/atlas/
 
 ### 3.0.8
 - Atlas 3.x migrations
-- Updates for Points-to analysis 3.0.8 client analysis interface changes
+- Updates for points-to analysis 3.0.8 client analysis interface changes
 - Major speed improvements on method signature matching
 
 ### 2.7.3
