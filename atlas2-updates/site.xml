@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature url="features/CallGraphToolbox_2.7.3.201603202142.jar" id="CallGraphToolbox" version="2.7.3.201603202142">
+      <category name="CallGraphToolbox"/>
+   </feature>
+   <category-def name="CallGraphToolbox" label="Call Graph Toolbox">
+      <description>
+         A toolbox for experimenting with several different Call Graph construction algorithms.
+      </description>
+   </category-def>
+</site>
