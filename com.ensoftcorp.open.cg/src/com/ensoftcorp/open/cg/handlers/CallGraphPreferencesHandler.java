@@ -15,7 +15,7 @@ public class CallGraphPreferencesHandler extends AbstractHandler {
 	public CallGraphPreferencesHandler() {}
 
 	/**
-	 * Runs the purity analysis
+	 * Opens the call graph construction preferences
 	 */
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		String id = "com.ensoftcorp.open.cg.ui.preferences";
