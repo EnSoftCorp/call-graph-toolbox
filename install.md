@@ -27,5 +27,10 @@ If you want to install from source for bleeding edge changes, first grab a copy 
 ## Changelog
 Note that version numbers are based off [Atlas](http://www.ensoftcorp.com/atlas/download/) version numbers.
 
+### 3.0.8
+- Atlas 3.x migrations
+- Updates for Points-to analysis 3.0.8 client analysis interface changes
+- Major speed improvements on method signature matching
+
 ### 2.7.3
 - Initial Release
