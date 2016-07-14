@@ -86,7 +86,7 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 		// but the call edges are really just a summary of the 
 		// data flow edges, so we can extract the call relationships
 		// retroactively out of the data flow graph
-		Q inferredDF = Common.universe().edgesTaggedWithAny(PointsToAnalysis.INFERRED);
+		Q inferredDF = Common.universe().edgesTaggedWithAny(PointsToAnalysis.INFERRED_DATA_FLOW);
 		
 		IProgressMonitor m = new org.eclipse.core.runtime.NullProgressMonitor();
 		
