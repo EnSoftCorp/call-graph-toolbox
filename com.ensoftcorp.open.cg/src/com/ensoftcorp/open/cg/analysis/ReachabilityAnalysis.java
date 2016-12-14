@@ -11,7 +11,7 @@ import com.ensoftcorp.atlas.core.script.CommonQueries;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.utils.CallGraphConstruction;
 import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
-import com.ensoftcorp.open.commons.wishful.StopGap;
+import com.ensoftcorp.open.java.commons.wishful.JavaStopGap;
 
 /**
  * This is about the simplest call graph we can make (dumber than a CHA).
@@ -105,9 +105,9 @@ public class ReachabilityAnalysis extends CGAnalysis {
 	public static AtlasSet<Node> getReachableMethods(Node callsite, Q typesToSearch){
 		Q methodSignatureEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedSignature);
 		Node methodSignature = methodSignatureEdges.successors(Common.toQ(callsite)).eval().nodes().getFirst();
-		String signature = methodSignature.getAttr(StopGap.SIGNATURE).toString();
+		String signature = methodSignature.getAttr(JavaStopGap.SIGNATURE).toString();
 		
-		Q matchingMethods = Common.universe().selectNode(StopGap.SIGNATURE, signature);
+		Q matchingMethods = Common.universe().selectNode(JavaStopGap.SIGNATURE, signature);
 		
 		Q containsEdges = Common.universe().edgesTaggedWithAny(XCSG.Contains);
 		Q candidateMethods = containsEdges.forwardStep(typesToSearch).nodesTaggedWithAny(XCSG.Method)

@@ -13,7 +13,7 @@ import org.eclipse.ui.IWorkbenchPreferencePage;
 import com.ensoftcorp.open.cg.Activator;
 import com.ensoftcorp.open.cg.log.Log;
 import com.ensoftcorp.open.cg.preferences.CallGraphPreferences;
-import com.ensoftcorp.open.commons.utils.MappingUtils;
+import com.ensoftcorp.open.commons.utilities.MappingUtils;
 
 /**
  * UI for setting call graph construction preferences

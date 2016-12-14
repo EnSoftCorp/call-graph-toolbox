@@ -8,11 +8,11 @@ import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
-import com.ensoftcorp.open.cg.log.Log;
 import com.ensoftcorp.atlas.core.query.Attr;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
+import com.ensoftcorp.open.cg.log.Log;
 import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
 import com.ensoftcorp.open.pointsto.common.PointsToAnalysis;
 import com.ensoftcorp.open.pointsto.preferences.PointsToPreferences;
@@ -60,7 +60,7 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 	@Override
 	protected void runAnalysis() {
 		// class loader issues are preventing us from calling this directly
-		if(!PointsToPreferences.isJimplePointsToAnalysisEnabled()){
+		if(!PointsToPreferences.isPointsToAnalysisEnabled()){
 			throw new RuntimeException("Points-to analysis has not been run!");
 		}
 		
