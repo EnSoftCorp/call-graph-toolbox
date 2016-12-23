@@ -15,7 +15,7 @@ import com.ensoftcorp.open.cg.log.Log;
 import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
 import com.ensoftcorp.open.cg.utils.ExceptionAnalysis;
 import com.ensoftcorp.open.commons.analysis.SetDefinitions;
-import com.ensoftcorp.open.java.commons.analyzers.DiscoverMainMethods;
+import com.ensoftcorp.open.java.commons.analyzers.JavaProgramEntryPoints;
 
 /**
  * Performs an Exception Type Analysis (ETA), which is a modification
@@ -76,7 +76,7 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 		// create a worklist and add the root method set
 		LinkedList<Node> worklist = new LinkedList<Node>();
 
-		AtlasSet<Node> mainMethods = DiscoverMainMethods.findMainMethods().eval().nodes();
+		AtlasSet<Node> mainMethods = JavaProgramEntryPoints.findMainMethods().eval().nodes();
 		if(libraryCallGraphConstructionEnabled || mainMethods.isEmpty()){
 			if(!libraryCallGraphConstructionEnabled && mainMethods.isEmpty()){
 				Log.warning("Application does not contain a main method, building a call graph using library assumptions.");
