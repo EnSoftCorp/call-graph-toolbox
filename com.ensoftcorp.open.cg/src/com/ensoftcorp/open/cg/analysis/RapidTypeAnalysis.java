@@ -91,26 +91,19 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		// initially the RTA based call graph is empty
 		AtlasSet<Edge> cgRTA = new AtlasHashSet<Edge>();
 		
+		// RTA has a single global allocation types set
+		AtlasSet<Node> allocationTypes = new AtlasHashSet<Node>();
+		
 		// iterate until the worklist is empty (in RTA the worklist only contains methods)
 		while(!worklist.isEmpty()){
 			Node method = worklist.removeFirst();
 			
-			// we should consider the allocation types instantiated directly in the method
-			AtlasSet<Node> allocationTypes = getAllocationTypesSet(method);
-			if(allocationTypes.isEmpty()){
-				// allocations are contained (declared) within the methods in the method reverse call graph
-				Q methodDeclarations = declarations.forward(Common.toQ(method));
-				Q allocations = methodDeclarations.nodesTaggedWithAny(XCSG.Instantiation);
-				// collect the types of each allocation
-				allocationTypes.addAll(typeOfEdges.successors(allocations).eval().nodes());
-				
-				// we should also include the allocation types of each parent method (in the current RTA call graph)
-				AtlasSet<Node> parentMethods = Common.toQ(cgRTA).reverse(Common.toQ(method)).difference(Common.toQ(method)).eval().nodes();
-				for(Node parentMethod : parentMethods){
-					AtlasSet<Node> parentAllocationTypes = getAllocationTypesSet(parentMethod);
-					allocationTypes.addAll(parentAllocationTypes);
-				}
-			}
+			// we should consider any new allocation types instantiated in the method
+			// allocations are contained (declared) within the methods in the method reverse call graph
+			Q methodDeclarations = declarations.forward(Common.toQ(method));
+			Q allocations = methodDeclarations.nodesTaggedWithAny(XCSG.Instantiation);
+			// collect the types of each allocation
+			allocationTypes.addAll(typeOfEdges.successors(allocations).eval().nodes());
 			
 			// next get a set of all the CHA call edges from the method and create an RTA edge
 			// from the method to the target method in the CHA call graph if the target methods
