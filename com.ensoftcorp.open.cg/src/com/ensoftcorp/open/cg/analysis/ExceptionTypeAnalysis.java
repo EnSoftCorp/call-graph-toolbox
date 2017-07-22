@@ -13,8 +13,8 @@ import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.log.Log;
 import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
-import com.ensoftcorp.open.cg.utils.ExceptionAnalysis;
 import com.ensoftcorp.open.commons.analysis.SetDefinitions;
+import com.ensoftcorp.open.java.commons.analysis.ThrowableAnalysis;
 import com.ensoftcorp.open.java.commons.analyzers.JavaProgramEntryPoints;
 
 /**
@@ -128,7 +128,7 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 			// for ETA we should inherit all allocation types from methods and their parents that 
 			// throw an exception that could be caught by this method
 			Q potentialCatchBlocks = declarations.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
-			Q throwingMethods = declarations.reverse(ExceptionAnalysis.findThrowForCatch(potentialCatchBlocks)).nodesTaggedWithAny(XCSG.Method);
+			Q throwingMethods = declarations.reverse(ThrowableAnalysis.findThrowForCatch(potentialCatchBlocks)).nodesTaggedWithAny(XCSG.Method);
 			throwingMethods = throwingMethods.difference(Common.toQ(method)); // only worried about exceptions that propagate back up the stack
 			for(Node throwingMethod : throwingMethods.eval().nodes()){
 				Q throwerAllocationTypes = Common.toQ(getAllocationTypesSet(throwingMethod));
@@ -139,7 +139,7 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 			// finally if this method throws an exception we should propagate those types to all
 			// methods that could potentially catch it
 			Q potentialThrowBlocks = declarations.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
-			Q catchingMethods = declarations.reverse(ExceptionAnalysis.findCatchForThrows(potentialThrowBlocks)).nodesTaggedWithAny(XCSG.Method);
+			Q catchingMethods = declarations.reverse(ThrowableAnalysis.findCatchForThrows(potentialThrowBlocks)).nodesTaggedWithAny(XCSG.Method);
 			catchingMethods = catchingMethods.difference(Common.toQ(method)); // only worried about exceptions that propagate back up the stack
 			for(Node catchingMethod : catchingMethods.eval().nodes()){
 				if(getAllocationTypesSet(catchingMethod).addAll(allocationTypes)){
