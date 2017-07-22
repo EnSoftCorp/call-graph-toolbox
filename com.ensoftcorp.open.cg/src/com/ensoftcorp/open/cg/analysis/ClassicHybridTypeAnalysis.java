@@ -7,12 +7,10 @@ import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
-import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.log.Log;
-import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
 import com.ensoftcorp.open.commons.analysis.SetDefinitions;
 import com.ensoftcorp.open.java.commons.analysis.CommonQueries;
 import com.ensoftcorp.open.java.commons.analyzers.JavaProgramEntryPoints;
@@ -38,7 +36,6 @@ public class ClassicHybridTypeAnalysis extends CGAnalysis {
 	private static final String TYPES_SET = "CLASSIC-XTA-TYPES";
 	
 	private static ClassicHybridTypeAnalysis instance = null;
-	private static CodeMapChangeListener codeMapChangeListener = null;
 	
 	protected ClassicHybridTypeAnalysis(boolean libraryCallGraphConstructionEnabled) {
 		// exists only to defeat instantiation
@@ -46,14 +43,8 @@ public class ClassicHybridTypeAnalysis extends CGAnalysis {
 	}
 	
 	public static ClassicHybridTypeAnalysis getInstance(boolean enableLibraryCallGraphConstruction) {
-		if (instance == null || (codeMapChangeListener != null && codeMapChangeListener.hasIndexChanged())) {
+		if (instance == null) {
 			instance = new ClassicHybridTypeAnalysis(enableLibraryCallGraphConstruction);
-			if(codeMapChangeListener == null){
-				codeMapChangeListener = new CodeMapChangeListener();
-				IndexingUtil.addListener(codeMapChangeListener);
-			} else {
-				codeMapChangeListener.reset();
-			}
 		}
 		return instance;
 	}

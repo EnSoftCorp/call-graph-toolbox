@@ -13,6 +13,9 @@ public class XTACallGraphSmartView extends CallGraphSmartView {
 	@Override
 	protected Q getCallGraph(boolean enableCallGraphConstruction) {
 		HybridTypeAnalysis xta = HybridTypeAnalysis.getInstance(enableCallGraphConstruction);
+		if(!xta.hasRun()){
+			xta.run();
+		}
 		return xta.getCallGraph();
 	}
 

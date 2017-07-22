@@ -7,13 +7,11 @@ import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
-import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.atlas.java.core.script.CommonQueries;
 import com.ensoftcorp.open.cg.log.Log;
-import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
 import com.ensoftcorp.open.commons.analysis.SetDefinitions;
 import com.ensoftcorp.open.java.commons.analyzers.JavaProgramEntryPoints;
 
@@ -38,7 +36,6 @@ public class MethodTypeAnalysis extends CGAnalysis {
 	private static final String TYPES_SET = "MTA-TYPES";
 	
 	private static MethodTypeAnalysis instance = null;
-	private static CodeMapChangeListener codeMapChangeListener = null;
 	
 	protected MethodTypeAnalysis(boolean libraryCallGraphConstructionEnabled) {
 		// exists only to defeat instantiation
@@ -46,14 +43,8 @@ public class MethodTypeAnalysis extends CGAnalysis {
 	}
 	
 	public static MethodTypeAnalysis getInstance(boolean enableLibraryCallGraphConstruction) {
-		if (instance == null || (codeMapChangeListener != null && codeMapChangeListener.hasIndexChanged())) {
+		if (instance == null) {
 			instance = new MethodTypeAnalysis(enableLibraryCallGraphConstruction);
-			if(codeMapChangeListener == null){
-				codeMapChangeListener = new CodeMapChangeListener();
-				IndexingUtil.addListener(codeMapChangeListener);
-			} else {
-				codeMapChangeListener.reset();
-			}
 		}
 		return instance;
 	}

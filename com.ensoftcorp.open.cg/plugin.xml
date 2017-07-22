@@ -20,9 +20,14 @@
             category="com.ensoftcorp.open.commons.ui.toolbox.preferences">
       </page>
    </extension>
+   
+   <!-- adds the prioritized codemap stage for running analysis -->
+   <extension point="com.ensoftcorp.open.commons.codemap">
+      <codemap class="com.ensoftcorp.open.cg.codemap.CallGraphCodemapStage"></codemap>
+   </extension>
 
-	<!-- add some smart view extensions for each call graph construction algorithm -->
-    <extension
+   <!-- add some smart view extensions for each call graph construction algorithm -->
+   <extension
          point="com.ensoftcorp.atlas.ui.smartViewScript">
       <script
             class="com.ensoftcorp.open.cg.smart.RACallGraphSmartView">

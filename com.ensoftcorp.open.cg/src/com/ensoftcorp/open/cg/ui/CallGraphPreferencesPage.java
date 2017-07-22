@@ -26,15 +26,15 @@ public class CallGraphPreferencesPage extends FieldEditorPreferencePage implemen
 	private static final String GENERAL_LOGGING_DESCRIPTION = "Enable General Logging";
 	private static final String LIBRARY_CALL_GRAPH_CONSTRUCTION_DESCRIPTION = "Enable Library Call Graph Construction";
 	
-	private static final String RA_ANALYSIS_DESCRIPTION = "Reachability Analysis";
-	private static final String CHA_ANALYSIS_DESCRIPTION = "Class Hierarchy Analysis";
-	private static final String RTA_ANALYSIS_DESCRIPTION = "Rapid Type Analysis";
-	private static final String MTA_ANALYSIS_DESCRIPTION = "Method Type Analysis";
-	private static final String FTA_ANALYSIS_DESCRIPTION = "Field Type Analysis";
-	private static final String ETA_ANALYSIS_DESCRIPTION = "Exception Type Analysis";
-	private static final String XTA_ANALYSIS_DESCRIPTION = "Classic Hybrid Type Analysis";
-	private static final String XTA2_ANALYSIS_DESCRIPTION = "Hybrid Type Analysis";
-	private static final String ZEROCFA_ANALYSIS_DESCRIPTION = "0-CFA Analysis";
+	private static final String RA_ALGORITHM_DESCRIPTION = "Reachability Analysis";
+	private static final String CHA_ALGORITHM_DESCRIPTION = "Class Hierarchy Analysis";
+	private static final String RTA_ALGORITHM_DESCRIPTION = "Rapid Type Analysis";
+	private static final String MTA_ALGORITHM_DESCRIPTION = "Method Type Analysis";
+	private static final String FTA_ALGORITHM_DESCRIPTION = "Field Type Analysis";
+	private static final String ETA_ALGORITHM_DESCRIPTION = "Exception Type Analysis";
+	private static final String XTA_ALGORITHM_DESCRIPTION = "Classic Hybrid Type Analysis";
+	private static final String XTA2_ALGORITHM_DESCRIPTION = "Hybrid Type Analysis";
+	private static final String ZEROCFA_ALGORITHM_DESCRIPTION = "0-CFA Analysis";
 
 	private static boolean changeListenerAdded = false;
 
@@ -83,15 +83,15 @@ public class CallGraphPreferencesPage extends FieldEditorPreferencePage implemen
 		addField(new BooleanFieldEditor(CallGraphPreferences.GENERAL_LOGGING, "&" + GENERAL_LOGGING_DESCRIPTION, getFieldEditorParent()));
 		addField(new BooleanFieldEditor(CallGraphPreferences.LIBRARY_CALL_GRAPH_CONSTRUCTION, "&" + LIBRARY_CALL_GRAPH_CONSTRUCTION_DESCRIPTION, getFieldEditorParent()));
 		addField(new LabelFieldEditor("Call Graph Generation Algorithms", getFieldEditorParent()));
-		addField(new BooleanFieldEditor(CallGraphPreferences.RA_ANALYSIS, "&" + RA_ANALYSIS_DESCRIPTION, getFieldEditorParent()));
-		addField(new BooleanFieldEditor(CallGraphPreferences.CHA_ANALYSIS, "&" + CHA_ANALYSIS_DESCRIPTION, getFieldEditorParent()));
-		addField(new BooleanFieldEditor(CallGraphPreferences.RTA_ANALYSIS, "&" + RTA_ANALYSIS_DESCRIPTION, getFieldEditorParent()));
-		addField(new BooleanFieldEditor(CallGraphPreferences.MTA_ANALYSIS, "&" + MTA_ANALYSIS_DESCRIPTION, getFieldEditorParent()));
-		addField(new BooleanFieldEditor(CallGraphPreferences.FTA_ANALYSIS, "&" + FTA_ANALYSIS_DESCRIPTION, getFieldEditorParent()));
-		addField(new BooleanFieldEditor(CallGraphPreferences.ETA_ANALYSIS, "&" + ETA_ANALYSIS_DESCRIPTION, getFieldEditorParent()));
-		addField(new BooleanFieldEditor(CallGraphPreferences.XTA_ANALYSIS, "&" + XTA_ANALYSIS_DESCRIPTION, getFieldEditorParent()));
-		addField(new BooleanFieldEditor(CallGraphPreferences.XTA2_ANALYSIS, "&" + XTA2_ANALYSIS_DESCRIPTION, getFieldEditorParent()));
-		addField(new BooleanFieldEditor(CallGraphPreferences.ZEROCFA_ANALYSIS, "&" + ZEROCFA_ANALYSIS_DESCRIPTION, getFieldEditorParent()));
+		addField(new BooleanFieldEditor(CallGraphPreferences.RA_ALGORITHM, "&" + RA_ALGORITHM_DESCRIPTION, getFieldEditorParent()));
+		addField(new BooleanFieldEditor(CallGraphPreferences.CHA_ALGORITHM, "&" + CHA_ALGORITHM_DESCRIPTION, getFieldEditorParent()));
+		addField(new BooleanFieldEditor(CallGraphPreferences.RTA_ALGORITHM, "&" + RTA_ALGORITHM_DESCRIPTION, getFieldEditorParent()));
+		addField(new BooleanFieldEditor(CallGraphPreferences.MTA_ALGORITHM, "&" + MTA_ALGORITHM_DESCRIPTION, getFieldEditorParent()));
+		addField(new BooleanFieldEditor(CallGraphPreferences.FTA_ALGORITHM, "&" + FTA_ALGORITHM_DESCRIPTION, getFieldEditorParent()));
+		addField(new BooleanFieldEditor(CallGraphPreferences.ETA_ALGORITHM, "&" + ETA_ALGORITHM_DESCRIPTION, getFieldEditorParent()));
+		addField(new BooleanFieldEditor(CallGraphPreferences.XTA_ALGORITHM, "&" + XTA_ALGORITHM_DESCRIPTION, getFieldEditorParent()));
+		addField(new BooleanFieldEditor(CallGraphPreferences.XTA2_ALGORITHM, "&" + XTA2_ALGORITHM_DESCRIPTION, getFieldEditorParent()));
+		addField(new BooleanFieldEditor(CallGraphPreferences.ZEROCFA_ALGORITHM, "&" + ZEROCFA_ALGORITHM_DESCRIPTION, getFieldEditorParent()));
 	}
 
 }

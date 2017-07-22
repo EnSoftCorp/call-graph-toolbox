@@ -7,13 +7,11 @@ import com.ensoftcorp.atlas.core.db.graph.Graph;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
-import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Attr;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.log.Log;
-import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
 import com.ensoftcorp.open.pointsto.common.PointsToAnalysis;
 import com.ensoftcorp.open.pointsto.preferences.PointsToPreferences;
 
@@ -37,7 +35,6 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 	public static final String PER_CONTROL_FLOW = "0-CFA-PER-CONTROL-FLOW";
 	
 	private static ZeroControlFlowAnalysis instance = null;
-	private static CodeMapChangeListener codeMapChangeListener = null;
 	
 	protected ZeroControlFlowAnalysis(boolean libraryCallGraphConstructionEnabled) {
 		// exists only to defeat instantiation
@@ -45,14 +42,8 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 	}
 	
 	public static ZeroControlFlowAnalysis getInstance(boolean enableLibraryCallGraphConstruction) {
-		if (instance == null || (codeMapChangeListener != null && codeMapChangeListener.hasIndexChanged())) {
+		if (instance == null) {
 			instance = new ZeroControlFlowAnalysis(enableLibraryCallGraphConstruction);
-			if(codeMapChangeListener == null){
-				codeMapChangeListener = new CodeMapChangeListener();
-				IndexingUtil.addListener(codeMapChangeListener);
-			} else {
-				codeMapChangeListener.reset();
-			}
 		}
 		return instance;
 	}

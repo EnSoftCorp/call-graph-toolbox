@@ -13,6 +13,9 @@ public class ZeroCFACallGraphSmartView extends CallGraphSmartView {
 	@Override
 	protected Q getCallGraph(boolean enableCallGraphConstruction) {
 		ZeroControlFlowAnalysis zeroCFA = ZeroControlFlowAnalysis.getInstance(enableCallGraphConstruction);
+		if(!zeroCFA.hasRun()){
+			zeroCFA.run();
+		}
 		return zeroCFA.getCallGraph();
 	}
 

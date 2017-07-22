@@ -13,6 +13,9 @@ public class RTACallGraphSmartView extends CallGraphSmartView {
 	@Override
 	protected Q getCallGraph(boolean enableCallGraphConstruction) {
 		RapidTypeAnalysis rta = RapidTypeAnalysis.getInstance(enableCallGraphConstruction);
+		if(!rta.hasRun()){
+			rta.run();
+		}
 		return rta.getCallGraph();
 	}
 

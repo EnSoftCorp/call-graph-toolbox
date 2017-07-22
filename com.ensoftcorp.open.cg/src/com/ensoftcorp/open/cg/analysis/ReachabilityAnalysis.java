@@ -3,14 +3,12 @@ package com.ensoftcorp.open.cg.analysis;
 import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
-import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Attr;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.script.CommonQueries;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.utils.CallGraphConstruction;
-import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
 import com.ensoftcorp.open.java.commons.wishful.JavaStopGap;
 
 /**
@@ -33,7 +31,6 @@ public class ReachabilityAnalysis extends CGAnalysis {
 	public static final String LIBRARY_PER_CONTROL_FLOW = "RA-LIBRARY-PER-CONTROL-FLOW"; 
 	
 	private static ReachabilityAnalysis instance = null;
-	private static CodeMapChangeListener codeMapChangeListener = null;
 	
 	protected ReachabilityAnalysis(boolean libraryCallGraphConstructionEnabled) {
 		// exists only to defeat instantiation
@@ -41,14 +38,8 @@ public class ReachabilityAnalysis extends CGAnalysis {
 	}
 	
 	public static ReachabilityAnalysis getInstance(boolean enableLibraryCallGraphConstruction) {
-		if (instance == null || (codeMapChangeListener != null && codeMapChangeListener.hasIndexChanged())) {
+		if (instance == null) {
 			instance = new ReachabilityAnalysis(enableLibraryCallGraphConstruction);
-			if(codeMapChangeListener == null){
-				codeMapChangeListener = new CodeMapChangeListener();
-				IndexingUtil.addListener(codeMapChangeListener);
-			} else {
-				codeMapChangeListener.reset();
-			}
 		}
 		return instance;
 	}
