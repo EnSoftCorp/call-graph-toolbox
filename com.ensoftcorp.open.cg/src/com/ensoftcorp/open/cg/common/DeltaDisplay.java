@@ -34,7 +34,7 @@ public class DeltaDisplay {
 	 */
 	public static void showRemoved(Q q1, Q q2, boolean extend, String title){
 		Q removed = q1.difference(q2);
-		DisplayUtils.show(removed, null, extend, title);
+		DisplayUtils.show(removed, extend, title);
 	}
 	
 	/**
@@ -46,7 +46,7 @@ public class DeltaDisplay {
 	public static void showAdded(Q q1, Q q2, boolean extend, String title){
 		Q same = q2.intersection(q1);
 		Q added = q2.difference(same);
-		DisplayUtils.show(added, null, extend, title);
+		DisplayUtils.show(added, extend, title);
 	}
 	
 }

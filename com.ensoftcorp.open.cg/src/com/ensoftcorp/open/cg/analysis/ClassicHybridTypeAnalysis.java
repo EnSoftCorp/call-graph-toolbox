@@ -10,12 +10,11 @@ import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
-import com.ensoftcorp.atlas.core.script.CommonQueries;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.log.Log;
 import com.ensoftcorp.open.cg.utils.CodeMapChangeListener;
 import com.ensoftcorp.open.commons.analysis.SetDefinitions;
-import com.ensoftcorp.open.commons.analysis.StandardQueries;
+import com.ensoftcorp.open.java.commons.analysis.CommonQueries;
 import com.ensoftcorp.open.java.commons.analyzers.JavaProgramEntryPoints;
 
 /**
@@ -203,7 +202,7 @@ public class ClassicHybridTypeAnalysis extends CGAnalysis {
 				// new allocation types were propagated to a field, which means methods that read from the field may get new allocation types
 				Node field = workitem;
 				AtlasSet<Node> fieldAllocationTypes = getAllocationTypesSet(field);
-				AtlasSet<Node> readingMethods = StandardQueries.getContainingFunctions(dataFlowEdges.successors(Common.toQ(field))).eval().nodes();
+				AtlasSet<Node> readingMethods = CommonQueries.getContainingMethods(dataFlowEdges.successors(Common.toQ(field))).eval().nodes();
 				for(Node readingMethod : readingMethods){
 					AtlasSet<Node> readingMethodAllocationTypes = getAllocationTypesSet(readingMethod);
 					if(readingMethodAllocationTypes.addAll(fieldAllocationTypes)){
