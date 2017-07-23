@@ -1,7 +1,10 @@
 package com.ensoftcorp.open.cg.smart;
 
 import com.ensoftcorp.atlas.core.query.Q;
+import com.ensoftcorp.atlas.core.script.Common;
+import com.ensoftcorp.open.cg.analysis.HybridTypeAnalysis;
 import com.ensoftcorp.open.cg.analysis.ZeroControlFlowAnalysis;
+import com.ensoftcorp.open.cg.log.Log; 
 
 public class ZeroCFACallGraphSmartView extends CallGraphSmartView {
 
@@ -12,11 +15,7 @@ public class ZeroCFACallGraphSmartView extends CallGraphSmartView {
 
 	@Override
 	protected Q getCallGraph(boolean enableCallGraphConstruction) {
-		ZeroControlFlowAnalysis zeroCFA = ZeroControlFlowAnalysis.getInstance(enableCallGraphConstruction);
-		if(!zeroCFA.hasRun()){
-			zeroCFA.run();
-		}
-		return zeroCFA.getCallGraph();
+		return ZeroControlFlowAnalysis.getInstance(enableCallGraphConstruction).getCallGraph();
 	}
 
 }

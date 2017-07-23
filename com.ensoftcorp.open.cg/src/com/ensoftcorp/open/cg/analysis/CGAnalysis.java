@@ -27,9 +27,6 @@ public abstract class CGAnalysis {
 	 * @return
 	 */
 	public Q getCallGraph(){
-		if(!hasRun()){
-			run();
-		}
 		return Common.universe().edgesTaggedWithAny(getCallEdgeTags());
 	}
 	
@@ -44,9 +41,6 @@ public abstract class CGAnalysis {
 	 * @return
 	 */
 	public Q getPerControlFlowGraph(){
-		if(!hasRun()){
-			run();
-		}
 		return Common.universe().edgesTaggedWithAny(getPerControlFlowEdgeTags());
 	}
 	
@@ -62,17 +56,8 @@ public abstract class CGAnalysis {
 	 * @return
 	 */
 	public boolean hasRun(){
-		return hasRun || graphHasEvidenceOfPreviousRun();
+		return hasRun;
 	}
-	
-	/**
-	 * Not ideal, but implementing this method guards against multiple instances
-	 * floating around due to class loader issues.  Ideally we could just use a
-	 * singleton and everything would be hunky-dory.
-	 * 
-	 * @return
-	 */
-	public abstract boolean graphHasEvidenceOfPreviousRun();
 	
 	/**
 	 * Runs the call graph construction (if it hasn't been run already)

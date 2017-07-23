@@ -33,6 +33,26 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 		loadPreferences();
 	}
 	
+	public static final String INFER_LIBRARY_CALLBACK_ENTRY_POINTS = "INFER_LIBRARY_CALLBACK_ENTRY_POINTS";
+	public static final Boolean INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DEFAULT = true;
+	private static boolean inferLibraryCallbackEntryPointsValue = INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DEFAULT;
+	
+	public static boolean isLibraryCallbackEntryPointsInferenceEnabled(){
+		if(!initialized){
+			loadPreferences();
+		}
+		return inferLibraryCallbackEntryPointsValue;
+	}
+	
+	/**
+	 * Configures library callback entry point inference
+	 */
+	public static void enableLibraryCallbackEntryPointsInfererence(boolean enabled){
+		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
+		preferences.setValue(INFER_LIBRARY_CALLBACK_ENTRY_POINTS, enabled);
+		loadPreferences();
+	}
+	
 	public static final String LIBRARY_CALL_GRAPH_CONSTRUCTION = "LIBRARY_CALL_GRAPH_CONSTRUCTION";
 	public static final Boolean LIBRARY_CALL_GRAPH_CONSTRUCTION_DEFAULT = false;
 	private static boolean libraryCallGraphConstructionAlgorithmValue = LIBRARY_CALL_GRAPH_CONSTRUCTION_DEFAULT;
@@ -80,7 +100,7 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 	 * Enable/disable CHA
 	 */
 	public static final String CHA_ALGORITHM = "CHA_ALGORITHM";
-	public static final Boolean CHA_ALGORITHM_DEFAULT = true;
+	public static final Boolean CHA_ALGORITHM_DEFAULT = false;
 	private static boolean chaAlgorithmValue = CHA_ALGORITHM_DEFAULT;
 	
 	public static boolean isClassHierarchyAnalysisEnabled(){
@@ -126,7 +146,7 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 	 * Enable/disable MTA
 	 */
 	public static final String MTA_ALGORITHM = "MTA_ALGORITHM";
-	public static final Boolean MTA_ALGORITHM_DEFAULT = true;
+	public static final Boolean MTA_ALGORITHM_DEFAULT = false;
 	private static boolean mtaAlgorithmValue = MTA_ALGORITHM_DEFAULT;
 
 	public static boolean isMethodTypeAnalysisEnabled(){
@@ -149,7 +169,7 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 	 * Enable/disable FTA
 	 */
 	public static final String FTA_ALGORITHM = "FTA_ALGORITHM";
-	public static final Boolean FTA_ALGORITHM_DEFAULT = true;
+	public static final Boolean FTA_ALGORITHM_DEFAULT = false;
 	private static boolean ftaAlgorithmValue = FTA_ALGORITHM_DEFAULT;
 
 	public static boolean isFieldTypeAnalysisEnabled(){
@@ -172,7 +192,7 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 	 * Enable/disable ETA
 	 */
 	public static final String ETA_ALGORITHM = "ETA_ALGORITHM";
-	public static final Boolean ETA_ALGORITHM_DEFAULT = true;
+	public static final Boolean ETA_ALGORITHM_DEFAULT = false;
 	private static boolean etaAlgorithmValue = ETA_ALGORITHM_DEFAULT;
 
 	public static boolean isExceptionTypeAnalysisEnabled(){
@@ -195,7 +215,7 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 	 * Enable/disable XTA
 	 */
 	public static final String XTA_ALGORITHM = "XTA_ALGORITHM";
-	public static final Boolean XTA_ALGORITHM_DEFAULT = true;
+	public static final Boolean XTA_ALGORITHM_DEFAULT = false;
 	private static boolean xtaAlgorithmValue = XTA_ALGORITHM_DEFAULT;
 
 	public static boolean isClassicHybridTypeAnalysisEnabled(){
@@ -218,7 +238,7 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 	 * Enable/disable XTA2
 	 */
 	public static final String XTA2_ALGORITHM = "XTA2_ALGORITHM";
-	public static final Boolean XTA2_ALGORITHM_DEFAULT = true;
+	public static final Boolean XTA2_ALGORITHM_DEFAULT = false;
 	private static boolean xta2AlgorithmValue = XTA2_ALGORITHM_DEFAULT;
 
 	public static boolean isHybridTypeAnalysisEnabled(){
@@ -240,8 +260,8 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 	/**
 	 * Enable/disable ZeroCFA
 	 */
-	public static final String ZEROCFA_ALGORITHM = "ZeroCFA_ALGORITHM";
-	public static final Boolean ZEROCFA_ALGORITHM_DEFAULT = true;
+	public static final String ZEROCFA_ALGORITHM = "ZEROCFA_ALGORITHM";
+	public static final Boolean ZEROCFA_ALGORITHM_DEFAULT = false;
 	private static boolean zerocfaAlgorithmValue = ZEROCFA_ALGORITHM_DEFAULT;
 
 	public static boolean isZeroCFAEnabled(){
@@ -264,6 +284,7 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 	public void initializeDefaultPreferences() {
 		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
 		preferences.setDefault(GENERAL_LOGGING, GENERAL_LOGGING_DEFAULT);
+		preferences.setDefault(INFER_LIBRARY_CALLBACK_ENTRY_POINTS, INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DEFAULT);
 		preferences.setDefault(LIBRARY_CALL_GRAPH_CONSTRUCTION, LIBRARY_CALL_GRAPH_CONSTRUCTION_DEFAULT);
 		preferences.setDefault(RA_ALGORITHM, RA_ALGORITHM_DEFAULT);
 		preferences.setDefault(CHA_ALGORITHM, CHA_ALGORITHM_DEFAULT);
@@ -282,6 +303,7 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 	public static void restoreDefaults() {
 		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
 		preferences.setValue(GENERAL_LOGGING, GENERAL_LOGGING_DEFAULT);
+		preferences.setValue(INFER_LIBRARY_CALLBACK_ENTRY_POINTS, INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DEFAULT);
 		preferences.setValue(LIBRARY_CALL_GRAPH_CONSTRUCTION, LIBRARY_CALL_GRAPH_CONSTRUCTION_DEFAULT);
 		preferences.setValue(RA_ALGORITHM, RA_ALGORITHM_DEFAULT);
 		preferences.setValue(CHA_ALGORITHM, CHA_ALGORITHM_DEFAULT);
@@ -302,6 +324,7 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 		try {
 			IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
 			generalLoggingAlgorithmValue = preferences.getBoolean(GENERAL_LOGGING);
+			inferLibraryCallbackEntryPointsValue = preferences.getBoolean(INFER_LIBRARY_CALLBACK_ENTRY_POINTS);
 			libraryCallGraphConstructionAlgorithmValue = preferences.getBoolean(LIBRARY_CALL_GRAPH_CONSTRUCTION);
 			raAlgorithmValue = preferences.getBoolean(RA_ALGORITHM);
 			chaAlgorithmValue = preferences.getBoolean(CHA_ALGORITHM);

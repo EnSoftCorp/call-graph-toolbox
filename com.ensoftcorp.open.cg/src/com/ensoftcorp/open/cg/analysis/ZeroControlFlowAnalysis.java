@@ -7,11 +7,13 @@ import com.ensoftcorp.atlas.core.db.graph.Graph;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
+import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Attr;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.log.Log;
+import com.ensoftcorp.open.commons.utilities.CodeMapChangeListener;
 import com.ensoftcorp.open.pointsto.common.PointsToAnalysis;
 import com.ensoftcorp.open.pointsto.preferences.PointsToPreferences;
 
@@ -41,9 +43,17 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 		super(libraryCallGraphConstructionEnabled);
 	}
 	
+	private static CodeMapChangeListener codeMapChangeListener = null;
+	
 	public static ZeroControlFlowAnalysis getInstance(boolean enableLibraryCallGraphConstruction) {
-		if (instance == null) {
+		if (instance == null || (codeMapChangeListener != null && codeMapChangeListener.hasIndexChanged())) {
 			instance = new ZeroControlFlowAnalysis(enableLibraryCallGraphConstruction);
+			if(codeMapChangeListener == null){
+				codeMapChangeListener = new CodeMapChangeListener();
+				IndexingUtil.addListener(codeMapChangeListener);
+			} else {
+				codeMapChangeListener.reset();
+			}
 		}
 		return instance;
 	}
@@ -143,8 +153,4 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 		return new String[]{PER_CONTROL_FLOW, ClassHierarchyAnalysis.LIBRARY_PER_CONTROL_FLOW};
 	}
 
-	@Override
-	public boolean graphHasEvidenceOfPreviousRun(){
-		return Common.universe().edgesTaggedWithAny(CALL).eval().edges().size() > 0;
-	}
 }

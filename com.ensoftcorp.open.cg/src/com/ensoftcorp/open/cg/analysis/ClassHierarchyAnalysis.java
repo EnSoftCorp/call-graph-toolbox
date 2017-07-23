@@ -5,10 +5,12 @@ import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.NodeDirection;
 import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
+import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.utils.CallGraphConstruction;
+import com.ensoftcorp.open.commons.utilities.CodeMapChangeListener;
 
 /**
  * This analysis builds a call graph using Class Hierarchy Analysis (CHA).
@@ -36,9 +38,17 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 		super(libraryCallGraphConstructionEnabled);
 	}
 	
+	private static CodeMapChangeListener codeMapChangeListener = null;
+	
 	public static ClassHierarchyAnalysis getInstance(boolean enableLibraryCallGraphConstruction) {
-		if (instance == null) {
+		if (instance == null || (codeMapChangeListener != null && codeMapChangeListener.hasIndexChanged())) {
 			instance = new ClassHierarchyAnalysis(enableLibraryCallGraphConstruction);
+			if(codeMapChangeListener == null){
+				codeMapChangeListener = new CodeMapChangeListener();
+				IndexingUtil.addListener(codeMapChangeListener);
+			} else {
+				codeMapChangeListener.reset();
+			}
 		}
 		return instance;
 	}
@@ -140,11 +150,6 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 	@Override
 	public String[] getPerControlFlowEdgeTags() {
 		return new String[]{PER_CONTROL_FLOW, LIBRARY_PER_CONTROL_FLOW};
-	}
-
-	@Override
-	public boolean graphHasEvidenceOfPreviousRun(){
-		return Common.universe().edgesTaggedWithAny(CALL).eval().edges().size() > 0;
 	}
 
 }

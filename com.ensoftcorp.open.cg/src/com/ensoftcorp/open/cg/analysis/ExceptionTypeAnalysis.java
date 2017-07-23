@@ -7,11 +7,13 @@ import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
+import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.log.Log;
 import com.ensoftcorp.open.commons.analysis.SetDefinitions;
+import com.ensoftcorp.open.commons.utilities.CodeMapChangeListener;
 import com.ensoftcorp.open.java.commons.analysis.ThrowableAnalysis;
 import com.ensoftcorp.open.java.commons.analyzers.JavaProgramEntryPoints;
 
@@ -40,9 +42,17 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 		super(libraryCallGraphConstructionEnabled);
 	}
 	
+	private static CodeMapChangeListener codeMapChangeListener = null;
+	
 	public static ExceptionTypeAnalysis getInstance(boolean enableLibraryCallGraphConstruction) {
-		if (instance == null) {
+		if (instance == null || (codeMapChangeListener != null && codeMapChangeListener.hasIndexChanged())) {
 			instance = new ExceptionTypeAnalysis(enableLibraryCallGraphConstruction);
+			if(codeMapChangeListener == null){
+				codeMapChangeListener = new CodeMapChangeListener();
+				IndexingUtil.addListener(codeMapChangeListener);
+			} else {
+				codeMapChangeListener.reset();
+			}
 		}
 		return instance;
 	}
@@ -152,7 +162,7 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 				Q callingStaticDispatches = Common.toQ(callingMethod).contained().nodesTaggedWithAny(XCSG.StaticDispatchCallSite);
 				boolean isStaticDispatch = !cha.getPerControlFlowGraph().predecessors(Common.toQ(calledMethod)).intersection(callingStaticDispatches).eval().nodes().isEmpty();
 				if(isStaticDispatch || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
-					RapidTypeAnalysis.updateCallGraph(worklist, cgETA, method, allocationTypes, callEdge, calledMethod);
+					updateCallGraph(worklist, cgETA, method, allocationTypes, callEdge, calledMethod);
 				} else {
 					// the call edge is a dynamic dispatch, need to resolve possible dispatches
 					// a dispatch is possible if the type declaring the method is one of the 
@@ -161,7 +171,7 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 					// because methods can be inherited from parent types
 					Q typeDeclaringCalledMethod = declarations.predecessors(Common.toQ(calledMethod));
 					if(!typeHierarchy.forward(Common.toQ(allocationTypes)).intersection(typeDeclaringCalledMethod).eval().nodes().isEmpty()){
-						RapidTypeAnalysis.updateCallGraph(worklist, cgETA, method, allocationTypes, callEdge, calledMethod);
+						updateCallGraph(worklist, cgETA, method, allocationTypes, callEdge, calledMethod);
 					}
 				}
 			}
@@ -179,6 +189,31 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 				perControlFlowEdge.tag(PER_CONTROL_FLOW);
 			}
 		}	
+	}
+	
+	/**
+	 * Updates the call graph and worklist for methods
+	 * @param worklist
+	 * @param cgRTA
+	 * @param method
+	 * @param allocationTypes
+	 * @param callEdge
+	 * @param calledMethod
+	 */
+	private static void updateCallGraph(LinkedList<Node> worklist, AtlasSet<Edge> cgRTA, Node method, AtlasSet<Node> allocationTypes, Edge callEdge, Node calledMethod) {
+		if(Common.toQ(cgRTA).betweenStep(Common.toQ(method), Common.toQ(calledMethod)).eval().edges().isEmpty()){
+			cgRTA.add(callEdge);
+			if(!worklist.contains(calledMethod)){
+				worklist.add(calledMethod);
+			}
+		} else {
+			AtlasSet<Node> toAllocationTypes = getAllocationTypesSet(calledMethod);
+			if(toAllocationTypes.addAll(allocationTypes)){
+				if(!worklist.contains(calledMethod)){
+					worklist.add(calledMethod);
+				}
+			}
+		}
 	}
 	
 	/**
@@ -207,11 +242,6 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 	@Override
 	public String[] getPerControlFlowEdgeTags() {
 		return new String[]{PER_CONTROL_FLOW, ClassHierarchyAnalysis.LIBRARY_PER_CONTROL_FLOW};
-	}
-	
-	@Override
-	public boolean graphHasEvidenceOfPreviousRun(){
-		return Common.universe().edgesTaggedWithAny(CALL).eval().edges().size() > 0;
 	}
 	
 }

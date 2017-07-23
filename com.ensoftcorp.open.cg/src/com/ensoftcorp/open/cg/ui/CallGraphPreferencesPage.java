@@ -14,6 +14,7 @@ import com.ensoftcorp.open.cg.Activator;
 import com.ensoftcorp.open.cg.log.Log;
 import com.ensoftcorp.open.cg.preferences.CallGraphPreferences;
 import com.ensoftcorp.open.commons.ui.components.LabelFieldEditor;
+import com.ensoftcorp.open.commons.ui.components.SpacerFieldEditor;
 import com.ensoftcorp.open.commons.utilities.MappingUtils;
 
 /**
@@ -23,8 +24,9 @@ import com.ensoftcorp.open.commons.utilities.MappingUtils;
  */
 public class CallGraphPreferencesPage extends FieldEditorPreferencePage implements IWorkbenchPreferencePage {
 
-	private static final String GENERAL_LOGGING_DESCRIPTION = "Enable General Logging";
-	private static final String LIBRARY_CALL_GRAPH_CONSTRUCTION_DESCRIPTION = "Enable Library Call Graph Construction";
+	private static final String GENERAL_LOGGING_DESCRIPTION = "General logging";
+	private static final String INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DESCRIPTION = "Infers entry points that may result from library callbacks";
+	private static final String LIBRARY_CALL_GRAPH_CONSTRUCTION_DESCRIPTION = "Library call graph construction (beta)";
 	
 	private static final String RA_ALGORITHM_DESCRIPTION = "Reachability Analysis";
 	private static final String CHA_ALGORITHM_DESCRIPTION = "Class Hierarchy Analysis";
@@ -54,7 +56,7 @@ public class CallGraphPreferencesPage extends FieldEditorPreferencePage implemen
 				@Override
 				public void propertyChange(org.eclipse.jface.util.PropertyChangeEvent event) {
 					CallGraphPreferences.loadPreferences();
-					if (event.getProperty() == CallGraphPreferences.LIBRARY_CALL_GRAPH_CONSTRUCTION) {
+					if (event.getProperty() == CallGraphPreferences.LIBRARY_CALL_GRAPH_CONSTRUCTION || event.getProperty() == CallGraphPreferences.INFER_LIBRARY_CALLBACK_ENTRY_POINTS) {
 						Display.getDefault().asyncExec(new Runnable(){
 							@Override
 							public void run() {
@@ -81,8 +83,13 @@ public class CallGraphPreferencesPage extends FieldEditorPreferencePage implemen
 	@Override
 	protected void createFieldEditors() {
 		addField(new BooleanFieldEditor(CallGraphPreferences.GENERAL_LOGGING, "&" + GENERAL_LOGGING_DESCRIPTION, getFieldEditorParent()));
+		addField(new BooleanFieldEditor(CallGraphPreferences.INFER_LIBRARY_CALLBACK_ENTRY_POINTS, "&" + INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DESCRIPTION, getFieldEditorParent()));
 		addField(new BooleanFieldEditor(CallGraphPreferences.LIBRARY_CALL_GRAPH_CONSTRUCTION, "&" + LIBRARY_CALL_GRAPH_CONSTRUCTION_DESCRIPTION, getFieldEditorParent()));
+		
+		addField(new SpacerFieldEditor(getFieldEditorParent()));
+		
 		addField(new LabelFieldEditor("Call Graph Generation Algorithms", getFieldEditorParent()));
+		
 		addField(new BooleanFieldEditor(CallGraphPreferences.RA_ALGORITHM, "&" + RA_ALGORITHM_DESCRIPTION, getFieldEditorParent()));
 		addField(new BooleanFieldEditor(CallGraphPreferences.CHA_ALGORITHM, "&" + CHA_ALGORITHM_DESCRIPTION, getFieldEditorParent()));
 		addField(new BooleanFieldEditor(CallGraphPreferences.RTA_ALGORITHM, "&" + RTA_ALGORITHM_DESCRIPTION, getFieldEditorParent()));
