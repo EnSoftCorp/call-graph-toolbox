@@ -8,6 +8,7 @@ import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
+import com.ensoftcorp.atlas.core.query.Attr;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
@@ -71,7 +72,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 			Log.warning("ClassHierarchyAnalysis was run without library call edges enabled, "
 					+ "the resulting call graph will be missing the LIBRARY-CALL edges.");
 		}
-		Q cgCHA = cha.getCallGraph();
+		AtlasSet<Edge> cgCHA = new AtlasHashSet<Edge>(cha.getCallGraph().eval().edges());
 		
 		// next create some subgraphs to work with
 		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
@@ -104,8 +105,8 @@ public class RapidTypeAnalysis extends CGAnalysis {
 			Q libraryTypes = SetDefinitions.libraries().nodes(XCSG.Type);
 			Q libraryMethods = libraryTypes.children().nodes(XCSG.Method);
 			Q overridesEdges = Common.universe().edges(XCSG.Overrides);
-			Q callbackMethods = overridesEdges.predecessors(libraryMethods).intersection(SetDefinitions.app());
-			rootMethods.addAll(callbackMethods.eval().nodes());
+			Q appCallbackMethods = overridesEdges.predecessors(libraryMethods).intersection(SetDefinitions.app());
+			rootMethods.addAll(appCallbackMethods.eval().nodes());
 		}
 
 		// when types are first loaded by the class loader, the static initializer of the class is run
@@ -120,8 +121,12 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		rootMethods.addAll(rootTypeStaticInitializers);
 		
 		// create a worklist and add the root method set
-		AtlasSet<Node> worklist = new AtlasHashSet<Node>();
-		worklist.addAll(rootMethods);
+		AtlasSet<Node> reachableMethods = new AtlasHashSet<Node>();
+		reachableMethods.addAll(rootMethods);
+		
+		if(CallGraphPreferences.isGeneralLoggingEnabled()) {
+			Log.info("RapidTypeAnalysis initialized with " + rootMethods.size() + " roots.");
+		}
 		
 		// initially the RTA based call graph is empty
 		AtlasSet<Edge> cgRTA = new AtlasHashSet<Edge>();
@@ -130,13 +135,17 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		AtlasSet<Node> allocationTypes = new AtlasHashSet<Node>();
 		
 		// iterate until a fixed point is reached in the call graph
-		boolean callGraphChanged = true;
+		long cgSize = cgRTA.size();
 
 		// iterate until the worklist is empty (in RTA the worklist only contains methods)
-		while(callGraphChanged){
-			callGraphChanged = false;
-			AtlasSet<Node> newCallTargets = new AtlasHashSet<Node>();
-			for(Node method : worklist){
+		do {
+			cgSize = cgRTA.size();
+			
+			// for each of the reachable methods discover the new allocation types
+			// it is best to do this step separate because discovering as many of
+			// the allocation types up front gets us to a fixed point faster and
+			// prevents us from redoing a bunch of work
+			for(Node method : reachableMethods){
 				// we should consider any new allocation types instantiated in the method
 				// allocations are contained (declared) within the methods in the method reverse call graph
 				Q methodDeclarations = CommonQueries.localDeclarations(Common.toQ(method));
@@ -145,27 +154,41 @@ public class RapidTypeAnalysis extends CGAnalysis {
 				// collect the types of each allocation
 				AtlasSet<Node> methodAllocationTypes = typeOfEdges.successors(allocations).eval().nodes();
 				allocationTypes.addAll(methodAllocationTypes);
-				
-				// next get a set of all the CHA call edges from the method and create an RTA edge
-				// from the method to the target method in the CHA call graph if the target methods
-				// type is compatible with the feasible allocated types that would reach this method
-				AtlasSet<Edge> callEdges = cgCHA.forwardStep(Common.toQ(method)).eval().edges();
+			}
+			
+			// get a set of all the CHA call edges from the method and create an RTA edge
+			// from the method to the target method in the CHA call graph if the target methods
+			// type is compatible with the feasible allocated types that would reach this method
+			Q feasibleMethods = Common.toQ(allocationTypes).children().nodes(XCSG.Method);
+			Q constructors = Common.universe().nodesTaggedWithAny(XCSG.Constructor);
+			Q methods = Common.universe().nodesTaggedWithAny(XCSG.Method);
+			Q initializers = methods.methods("<init>");
+			Q staticMethods = methods.nodes(Attr.Node.IS_STATIC);
+			feasibleMethods = feasibleMethods.union(constructors, initializers, staticMethods);
+			Q infeasibleMethods = Common.universe().nodes(XCSG.Method).difference(feasibleMethods);
+			
+			// for each of the reachable methods add the new feasible call edges
+			AtlasSet<Node> callTargets = new AtlasHashSet<Node>();
+			for(Node method : reachableMethods){
+				AtlasSet<Edge> callEdges = Common.toQ(cgCHA).difference(infeasibleMethods).forwardStep(Common.toQ(method)).eval().edges();
 				for(Edge callEdge : callEdges){
 					// add static dispatches to the rta call graph
 					// includes called methods marked static and constructors
 					Node calledMethod = callEdge.getNode(EdgeDirection.TO);
 					Node callingMethod = callEdge.getNode(EdgeDirection.FROM);
-					Q callingStaticDispatches = Common.toQ(callingMethod).contained().nodesTaggedWithAny(XCSG.StaticDispatchCallSite);
+					Q callingStaticDispatches = CommonQueries.localDeclarations(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.StaticDispatchCallSite);
 					boolean isStaticDispatch = !cha.getPerControlFlowGraph().predecessors(Common.toQ(calledMethod)).intersection(callingStaticDispatches).eval().nodes().isEmpty();
 					if(isStaticDispatch || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
 						updateCallGraph(cgRTA, method, allocationTypes, callEdge, calledMethod);
-						newCallTargets.add(calledMethod);
+						callTargets.add(calledMethod);
 						// add the static initializers of newly loaded types as root methods
 						for(Node callMethodType : Common.toQ(calledMethod).parent().eval().nodes()){
 							if(loadedTypes.add(callMethodType)){
-								AtlasSet<Node> initializers = Common.toQ(callMethodType).children().methods("<clinit>").eval().nodes();
-								for(Node initializer : initializers){
-									newCallTargets.add(initializer);
+								Q staticInitializers = Common.toQ(callMethodType).children().methods("<clinit>");
+								// ignoring initializers in libraries because they are just method stubs
+								Q appStaticInitializers = staticInitializers.intersection(SetDefinitions.app());
+								for(Node staticInitializer : appStaticInitializers.eval().nodes()){
+									callTargets.add(staticInitializer);
 								}
 							}
 						}
@@ -178,12 +201,31 @@ public class RapidTypeAnalysis extends CGAnalysis {
 						Q typeDeclaringCalledMethod = declarations.predecessors(Common.toQ(calledMethod));
 						if(!typeHierarchy.forward(Common.toQ(allocationTypes)).intersection(typeDeclaringCalledMethod).eval().nodes().isEmpty()){
 							updateCallGraph(cgRTA, method, allocationTypes, callEdge, calledMethod);
-							newCallTargets.add(calledMethod);
+							callTargets.add(calledMethod);
 						}
 					}
 				}
 			}
-			callGraphChanged = worklist.addAll(newCallTargets);
+			
+			if(CallGraphPreferences.isGeneralLoggingEnabled()) {
+				Log.info("RapidTypeAnalysis discovered " + (cgRTA.size() - cgSize) + " new call edges."
+					+ "\n" + cgRTA.size() + " call edges"
+					+ "\n" + reachableMethods.size() + " reachable methods"
+					+ "\n" + allocationTypes.size() + " allocation types"
+					+ "\n" + loadedTypes.size() + " loaded types");
+			}
+			
+			// update our set of reachable methods for the next iteration
+			reachableMethods.addAll(callTargets);
+			
+			// remove the realized call edges so we don't repeat work
+			for(Edge rtaEdge : cgRTA){
+				cgCHA.remove(rtaEdge);
+			}
+		} while(cgRTA.size() > cgSize);
+		
+		if(CallGraphPreferences.isGeneralLoggingEnabled()) {
+			Log.info("RapidTypeAnalysis reached fixed point.");
 		}
 		
 		// just tag each edge in the RTA call graph with "RTA" to distinguish it
