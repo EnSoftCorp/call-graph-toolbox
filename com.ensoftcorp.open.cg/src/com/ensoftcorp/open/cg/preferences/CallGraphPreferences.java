@@ -120,10 +120,33 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 	}
 	
 	/**
+	 * Enable/disable RRTA
+	 */
+	public static final String RRTA_ALGORITHM = "RRTA_ALGORITHM";
+	public static final Boolean RRTA_ALGORITHM_DEFAULT = true;
+	private static boolean rrtaAlgorithmValue = RRTA_ALGORITHM_DEFAULT;
+
+	public static boolean isReallyRapidTypeAnalysisEnabled(){
+		if(!initialized){
+			loadPreferences();
+		}
+		return rrtaAlgorithmValue;
+	}
+	
+	/**
+	 * Configures Rapid Type Analysis
+	 */
+	public static void enableReallyRapidTypeAnalysis(boolean enabled){
+		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
+		preferences.setValue(RRTA_ALGORITHM, enabled);
+		loadPreferences();
+	}
+	
+	/**
 	 * Enable/disable RTA
 	 */
 	public static final String RTA_ALGORITHM = "RTA_ALGORITHM";
-	public static final Boolean RTA_ALGORITHM_DEFAULT = true;
+	public static final Boolean RTA_ALGORITHM_DEFAULT = false;
 	private static boolean rtaAlgorithmValue = RTA_ALGORITHM_DEFAULT;
 
 	public static boolean isRapidTypeAnalysisEnabled(){
@@ -288,6 +311,7 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 		preferences.setDefault(LIBRARY_CALL_GRAPH_CONSTRUCTION, LIBRARY_CALL_GRAPH_CONSTRUCTION_DEFAULT);
 		preferences.setDefault(RA_ALGORITHM, RA_ALGORITHM_DEFAULT);
 		preferences.setDefault(CHA_ALGORITHM, CHA_ALGORITHM_DEFAULT);
+		preferences.setDefault(RRTA_ALGORITHM, RRTA_ALGORITHM_DEFAULT);
 		preferences.setDefault(RTA_ALGORITHM, RTA_ALGORITHM_DEFAULT);
 		preferences.setDefault(MTA_ALGORITHM, MTA_ALGORITHM_DEFAULT);
 		preferences.setDefault(FTA_ALGORITHM, FTA_ALGORITHM_DEFAULT);
@@ -307,6 +331,7 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 		preferences.setValue(LIBRARY_CALL_GRAPH_CONSTRUCTION, LIBRARY_CALL_GRAPH_CONSTRUCTION_DEFAULT);
 		preferences.setValue(RA_ALGORITHM, RA_ALGORITHM_DEFAULT);
 		preferences.setValue(CHA_ALGORITHM, CHA_ALGORITHM_DEFAULT);
+		preferences.setValue(RRTA_ALGORITHM, RRTA_ALGORITHM_DEFAULT);
 		preferences.setValue(RTA_ALGORITHM, RTA_ALGORITHM_DEFAULT);
 		preferences.setValue(MTA_ALGORITHM, MTA_ALGORITHM_DEFAULT);
 		preferences.setValue(FTA_ALGORITHM, FTA_ALGORITHM_DEFAULT);
@@ -328,6 +353,7 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 			libraryCallGraphConstructionAlgorithmValue = preferences.getBoolean(LIBRARY_CALL_GRAPH_CONSTRUCTION);
 			raAlgorithmValue = preferences.getBoolean(RA_ALGORITHM);
 			chaAlgorithmValue = preferences.getBoolean(CHA_ALGORITHM);
+			rrtaAlgorithmValue = preferences.getBoolean(RRTA_ALGORITHM);
 			rtaAlgorithmValue = preferences.getBoolean(RTA_ALGORITHM);
 			mtaAlgorithmValue = preferences.getBoolean(MTA_ALGORITHM);
 			ftaAlgorithmValue = preferences.getBoolean(FTA_ALGORITHM);

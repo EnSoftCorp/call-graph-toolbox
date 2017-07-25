@@ -77,7 +77,6 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		// next create some subgraphs to work with
 		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
 		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
-		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
 		
 		AtlasSet<Node> rootMethods = new AtlasHashSet<Node>();
 		
@@ -108,9 +107,16 @@ public class RapidTypeAnalysis extends CGAnalysis {
 			Q appCallbackMethods = overridesEdges.predecessors(libraryMethods).intersection(SetDefinitions.app());
 			rootMethods.addAll(appCallbackMethods.eval().nodes());
 		}
+		
+		Q rootMethodParameterTypes = typeOfEdges.successors(Common.toQ(rootMethods).children().nodes(XCSG.Parameter));
 
 		// when types are first loaded by the class loader, the static initializer of the class is run
+		// since this is only used to locate new static initializers this only needs to track the loaded
+		// application types
 		AtlasSet<Node> loadedTypes = new AtlasHashSet<Node>();
+		
+		// add the applications loaded types
+		loadedTypes.add(rootMethodParameterTypes.intersection(SetDefinitions.app()).eval().nodes());
 		
 		// add the static initializers of the methods in the root methods
 		AtlasSet<Node> rootTypes = Common.toQ(rootMethods).parent().eval().nodes();
@@ -133,6 +139,9 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		
 		// RTA has a single global allocation types set
 		AtlasSet<Node> allocationTypes = new AtlasHashSet<Node>();
+		
+		// add the allocation types that are passed to entry point methods (ex: String[] for the main method)
+		allocationTypes.add(rootMethodParameterTypes.eval().nodes());
 		
 		// iterate until a fixed point is reached in the call graph
 		long cgSize = cgRTA.size();
@@ -198,7 +207,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 						// allocated types (or the parent of an allocated type)
 						// note: we should consider the supertype hierarchy of the allocation types
 						// because methods can be inherited from parent types
-						Q typeDeclaringCalledMethod = declarations.predecessors(Common.toQ(calledMethod));
+						Q typeDeclaringCalledMethod = Common.toQ(calledMethod).parent();
 						if(!typeHierarchy.forward(Common.toQ(allocationTypes)).intersection(typeDeclaringCalledMethod).eval().nodes().isEmpty()){
 							updateCallGraph(cgRTA, method, allocationTypes, callEdge, calledMethod);
 							callTargets.add(calledMethod);
@@ -235,7 +244,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 			rtaEdge.tag(CALL);
 			Node callingMethod = rtaEdge.getNode(EdgeDirection.FROM);
 			Node calledMethod = rtaEdge.getNode(EdgeDirection.TO);
-			Q callsites = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.CallSite);
+			Q callsites = CommonQueries.localDeclarations(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.CallSite);
 			for(Edge perControlFlowEdge : pcfCHA.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
 				perControlFlowEdge.tag(PER_CONTROL_FLOW);
 			}

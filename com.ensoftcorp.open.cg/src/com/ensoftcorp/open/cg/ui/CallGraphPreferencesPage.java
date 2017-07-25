@@ -30,6 +30,7 @@ public class CallGraphPreferencesPage extends FieldEditorPreferencePage implemen
 	
 	private static final String RA_ALGORITHM_DESCRIPTION = "Reachability Analysis";
 	private static final String CHA_ALGORITHM_DESCRIPTION = "Class Hierarchy Analysis";
+	private static final String RRTA_ALGORITHM_DESCRIPTION = "Really Rapid Type Analysis";
 	private static final String RTA_ALGORITHM_DESCRIPTION = "Rapid Type Analysis";
 	private static final String MTA_ALGORITHM_DESCRIPTION = "Method Type Analysis";
 	private static final String FTA_ALGORITHM_DESCRIPTION = "Field Type Analysis";
@@ -92,6 +93,7 @@ public class CallGraphPreferencesPage extends FieldEditorPreferencePage implemen
 		
 		addField(new BooleanFieldEditor(CallGraphPreferences.RA_ALGORITHM, "&" + RA_ALGORITHM_DESCRIPTION, getFieldEditorParent()));
 		addField(new BooleanFieldEditor(CallGraphPreferences.CHA_ALGORITHM, "&" + CHA_ALGORITHM_DESCRIPTION, getFieldEditorParent()));
+		addField(new BooleanFieldEditor(CallGraphPreferences.RRTA_ALGORITHM, "&" + RRTA_ALGORITHM_DESCRIPTION, getFieldEditorParent()));
 		addField(new BooleanFieldEditor(CallGraphPreferences.RTA_ALGORITHM, "&" + RTA_ALGORITHM_DESCRIPTION, getFieldEditorParent()));
 		addField(new BooleanFieldEditor(CallGraphPreferences.MTA_ALGORITHM, "&" + MTA_ALGORITHM_DESCRIPTION, getFieldEditorParent()));
 		addField(new BooleanFieldEditor(CallGraphPreferences.FTA_ALGORITHM, "&" + FTA_ALGORITHM_DESCRIPTION, getFieldEditorParent()));

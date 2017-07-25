@@ -10,6 +10,7 @@ import com.ensoftcorp.open.cg.analysis.HybridTypeAnalysis;
 import com.ensoftcorp.open.cg.analysis.MethodTypeAnalysis;
 import com.ensoftcorp.open.cg.analysis.RapidTypeAnalysis;
 import com.ensoftcorp.open.cg.analysis.ReachabilityAnalysis;
+import com.ensoftcorp.open.cg.analysis.ReallyRapidTypeAnalysis;
 import com.ensoftcorp.open.cg.analysis.ZeroControlFlowAnalysis;
 import com.ensoftcorp.open.cg.preferences.CallGraphPreferences;
 import com.ensoftcorp.open.commons.codemap.PrioritizedCodemapStage;
@@ -44,6 +45,10 @@ public class CallGraphCodemapStage extends PrioritizedCodemapStage {
 		if(CallGraphPreferences.isClassHierarchyAnalysisEnabled()){
 			ClassHierarchyAnalysis cha = ClassHierarchyAnalysis.getInstance(enableLibraryCallGraphConstruction);
 			cha.run();
+		}
+		if(CallGraphPreferences.isReallyRapidTypeAnalysisEnabled()){
+			ReallyRapidTypeAnalysis rrta = ReallyRapidTypeAnalysis.getInstance(enableLibraryCallGraphConstruction);
+			rrta.run();
 		}
 		if(CallGraphPreferences.isRapidTypeAnalysisEnabled()){
 			RapidTypeAnalysis rta = RapidTypeAnalysis.getInstance(enableLibraryCallGraphConstruction);
