@@ -139,17 +139,17 @@ public class ReallyRapidTypeAnalysis extends CGAnalysis {
 		
 		// just tag each edge in the RRTA call graph with "RRTA" to distinguish it
 		// from the CHA call graph
-		if(CallGraphPreferences.isGeneralLoggingEnabled()){
-			Log.info("Tagging RRTA Call Edges");
-		}
+//		if(CallGraphPreferences.isGeneralLoggingEnabled()){
+//			Log.info("Tagging RRTA Call Edges");
+//		}
 		for(Edge rrtaEdge : rrta.eval().edges()){
 			rrtaEdge.tag(CALL);
 		}
 		
 		// tag each per control flow edge
-		if(CallGraphPreferences.isGeneralLoggingEnabled()){
-			Log.info("Tagging RRTA Per Control Flow Edges");
-		}
+//		if(CallGraphPreferences.isGeneralLoggingEnabled()){
+//			Log.info("Tagging RRTA Per Control Flow Edges");
+//		}
 		for(Edge pcfRRTAEdge : pcfRRTA.eval().edges()){
 			pcfRRTAEdge.tag(PER_CONTROL_FLOW);
 		}
