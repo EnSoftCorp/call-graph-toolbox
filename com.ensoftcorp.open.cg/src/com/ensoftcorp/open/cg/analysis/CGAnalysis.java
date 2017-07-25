@@ -1,5 +1,7 @@
 package com.ensoftcorp.open.cg.analysis;
 
+import java.text.DecimalFormat;
+
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.open.cg.log.Log;
@@ -70,13 +72,15 @@ public abstract class CGAnalysis {
 			return 0;
 		} else {
 			try {
+				Log.info("Starting " + getClass().getSimpleName() + " call graph construction");
 				long start = System.nanoTime();
-				Log.info("Starting " + getClass().getSimpleName() + " Call Graph Construction");
 				runAnalysis();
-				Log.info("Finished " + getClass().getSimpleName() + " Call Graph Construction");
-				hasRun = true;
 				long stop = System.nanoTime();
-				return (stop - start)/1000.0/1000.0;
+				double time = (stop - start)/1000.0/1000.0;
+				DecimalFormat decimalFormat = new DecimalFormat("#.##");
+				Log.info("Finished " + getClass().getSimpleName() + " call graph construction in " + decimalFormat.format(time) + "ms");
+				hasRun = true;
+				return time;
 			} catch (Exception e){
 				Log.error("Error constructing call graph.", e);
 				hasRun = false;
