@@ -10,7 +10,8 @@ Require-Bundle:
  com.ensoftcorp.open.commons;bundle-version="3.1.0";visibility:=reexport,
  com.ensoftcorp.open.pointsto;bundle-version="3.1.0";visibility:=reexport,
  com.ensoftcorp.atlas.core;bundle-version="3.1.4",
- com.ensoftcorp.open.java.commons;bundle-version="3.1.0"
+ com.ensoftcorp.open.java.commons;bundle-version="3.1.0",
+ org.objectweb.asm;bundle-version="5.2.0"
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .
 Bundle-Activator: com.ensoftcorp.open.cg.Activator
