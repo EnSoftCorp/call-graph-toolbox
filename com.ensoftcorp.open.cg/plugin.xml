@@ -36,9 +36,6 @@
             class="com.ensoftcorp.open.cg.smart.CHACallGraphSmartView">
       </script>
       <script
-            class="com.ensoftcorp.open.cg.smart.RRTACallGraphSmartView">
-      </script>
-      <script
             class="com.ensoftcorp.open.cg.smart.RTACallGraphSmartView">
       </script>
       <script

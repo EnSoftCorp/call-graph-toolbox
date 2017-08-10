@@ -11,69 +11,6 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 	private static boolean initialized = false;
 	
 	/**
-	 * Enable/disable general logging
-	 */
-	public static final String GENERAL_LOGGING = "GENERAL_LOGGING";
-	public static final Boolean GENERAL_LOGGING_DEFAULT = true;
-	private static boolean generalLoggingAlgorithmValue = GENERAL_LOGGING_DEFAULT;
-	
-	public static boolean isGeneralLoggingEnabled(){
-		if(!initialized){
-			loadPreferences();
-		}
-		return generalLoggingAlgorithmValue;
-	}
-	
-	/**
-	 * Configures general logging
-	 */
-	public static void enableGeneralLogging(boolean enabled){
-		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
-		preferences.setValue(GENERAL_LOGGING, enabled);
-		loadPreferences();
-	}
-	
-	public static final String INFER_LIBRARY_CALLBACK_ENTRY_POINTS = "INFER_LIBRARY_CALLBACK_ENTRY_POINTS";
-	public static final Boolean INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DEFAULT = true;
-	private static boolean inferLibraryCallbackEntryPointsValue = INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DEFAULT;
-	
-	public static boolean isLibraryCallbackEntryPointsInferenceEnabled(){
-		if(!initialized){
-			loadPreferences();
-		}
-		return inferLibraryCallbackEntryPointsValue;
-	}
-	
-	/**
-	 * Configures library callback entry point inference
-	 */
-	public static void enableLibraryCallbackEntryPointsInfererence(boolean enabled){
-		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
-		preferences.setValue(INFER_LIBRARY_CALLBACK_ENTRY_POINTS, enabled);
-		loadPreferences();
-	}
-	
-	public static final String LIBRARY_CALL_GRAPH_CONSTRUCTION = "LIBRARY_CALL_GRAPH_CONSTRUCTION";
-	public static final Boolean LIBRARY_CALL_GRAPH_CONSTRUCTION_DEFAULT = false;
-	private static boolean libraryCallGraphConstructionAlgorithmValue = LIBRARY_CALL_GRAPH_CONSTRUCTION_DEFAULT;
-	
-	public static boolean isLibraryCallGraphConstructionEnabled(){
-		if(!initialized){
-			loadPreferences();
-		}
-		return libraryCallGraphConstructionAlgorithmValue;
-	}
-	
-	/**
-	 * Configures library call graph construction
-	 */
-	public static void enableLibraryCallGraphConstruction(boolean enabled){
-		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
-		preferences.setValue(LIBRARY_CALL_GRAPH_CONSTRUCTION, enabled);
-		loadPreferences();
-	}
-	
-	/**
 	 * Enable/disable RA
 	 */
 	public static final String RA_ALGORITHM = "RA_ALGORITHM";
@@ -116,29 +53,6 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 	public static void enableClassHierarchyAnalysis(boolean enabled){
 		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
 		preferences.setValue(CHA_ALGORITHM, enabled);
-		loadPreferences();
-	}
-	
-	/**
-	 * Enable/disable RRTA
-	 */
-	public static final String RRTA_ALGORITHM = "RRTA_ALGORITHM";
-	public static final Boolean RRTA_ALGORITHM_DEFAULT = true;
-	private static boolean rrtaAlgorithmValue = RRTA_ALGORITHM_DEFAULT;
-
-	public static boolean isReallyRapidTypeAnalysisEnabled(){
-		if(!initialized){
-			loadPreferences();
-		}
-		return rrtaAlgorithmValue;
-	}
-	
-	/**
-	 * Configures Rapid Type Analysis
-	 */
-	public static void enableReallyRapidTypeAnalysis(boolean enabled){
-		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
-		preferences.setValue(RRTA_ALGORITHM, enabled);
 		loadPreferences();
 	}
 	
@@ -303,15 +217,98 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 		loadPreferences();
 	}
 	
+	/**
+	 * Enable/disable general logging
+	 */
+	public static final String GENERAL_LOGGING = "GENERAL_LOGGING";
+	public static final Boolean GENERAL_LOGGING_DEFAULT = true;
+	private static boolean generalLoggingAlgorithmValue = GENERAL_LOGGING_DEFAULT;
+	
+	public static boolean isGeneralLoggingEnabled(){
+		if(!initialized){
+			loadPreferences();
+		}
+		return generalLoggingAlgorithmValue;
+	}
+	
+	/**
+	 * Configures general logging
+	 */
+	public static void enableGeneralLogging(boolean enabled){
+		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
+		preferences.setValue(GENERAL_LOGGING, enabled);
+		loadPreferences();
+	}
+	
+	public static final String INFER_LIBRARY_CALLBACK_ENTRY_POINTS = "INFER_LIBRARY_CALLBACK_ENTRY_POINTS";
+	public static final Boolean INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DEFAULT = true;
+	private static boolean inferLibraryCallbackEntryPointsValue = INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DEFAULT;
+	
+	public static boolean isLibraryCallbackEntryPointsInferenceEnabled(){
+		if(!initialized){
+			loadPreferences();
+		}
+		return inferLibraryCallbackEntryPointsValue;
+	}
+	
+	/**
+	 * Configures library callback entry point inference
+	 */
+	public static void enableLibraryCallbackEntryPointsInfererence(boolean enabled){
+		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
+		preferences.setValue(INFER_LIBRARY_CALLBACK_ENTRY_POINTS, enabled);
+		loadPreferences();
+	}
+	
+	public static final String LIBRARY_CALL_GRAPH_CONSTRUCTION = "LIBRARY_CALL_GRAPH_CONSTRUCTION";
+	public static final Boolean LIBRARY_CALL_GRAPH_CONSTRUCTION_DEFAULT = false;
+	private static boolean libraryCallGraphConstructionAlgorithmValue = LIBRARY_CALL_GRAPH_CONSTRUCTION_DEFAULT;
+	
+	public static boolean isLibraryCallGraphConstructionEnabled(){
+		if(!initialized){
+			loadPreferences();
+		}
+		return libraryCallGraphConstructionAlgorithmValue;
+	}
+	
+	/**
+	 * Configures library call graph construction
+	 */
+	public static void enableLibraryCallGraphConstruction(boolean enabled){
+		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
+		preferences.setValue(LIBRARY_CALL_GRAPH_CONSTRUCTION, enabled);
+		loadPreferences();
+	}
+	
+	/**
+	 * Enable/disable reachability restrictions in various CG algorithms
+	 */
+	public static final String REACHABILITY_RESTRICTIONS = "REACHABILITY_RESTRICTIONS";
+	public static final Boolean REACHABILITY_RESTRICTIONS_DEFAULT = false;
+	private static boolean reachabilityRestrictionsValue = REACHABILITY_RESTRICTIONS_DEFAULT;
+
+	public static boolean isReachabilityEnabled(){
+		if(!initialized){
+			loadPreferences();
+		}
+		return reachabilityRestrictionsValue;
+	}
+	
+	/**
+	 * Configures reachability restrictions
+	 */
+	public static void enableReachabilityRestrictions(boolean enabled){
+		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
+		preferences.setValue(REACHABILITY_RESTRICTIONS, enabled);
+		loadPreferences();
+	}
+	
 	@Override
 	public void initializeDefaultPreferences() {
 		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
-		preferences.setDefault(GENERAL_LOGGING, GENERAL_LOGGING_DEFAULT);
-		preferences.setDefault(INFER_LIBRARY_CALLBACK_ENTRY_POINTS, INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DEFAULT);
-		preferences.setDefault(LIBRARY_CALL_GRAPH_CONSTRUCTION, LIBRARY_CALL_GRAPH_CONSTRUCTION_DEFAULT);
+		
 		preferences.setDefault(RA_ALGORITHM, RA_ALGORITHM_DEFAULT);
 		preferences.setDefault(CHA_ALGORITHM, CHA_ALGORITHM_DEFAULT);
-		preferences.setDefault(RRTA_ALGORITHM, RRTA_ALGORITHM_DEFAULT);
 		preferences.setDefault(RTA_ALGORITHM, RTA_ALGORITHM_DEFAULT);
 		preferences.setDefault(MTA_ALGORITHM, MTA_ALGORITHM_DEFAULT);
 		preferences.setDefault(FTA_ALGORITHM, FTA_ALGORITHM_DEFAULT);
@@ -319,6 +316,11 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 		preferences.setDefault(XTA_ALGORITHM, XTA_ALGORITHM_DEFAULT);
 		preferences.setDefault(XTA2_ALGORITHM, XTA2_ALGORITHM_DEFAULT);
 		preferences.setDefault(ZEROCFA_ALGORITHM, ZEROCFA_ALGORITHM_DEFAULT);
+		
+		preferences.setDefault(GENERAL_LOGGING, GENERAL_LOGGING_DEFAULT);
+		preferences.setDefault(INFER_LIBRARY_CALLBACK_ENTRY_POINTS, INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DEFAULT);
+		preferences.setDefault(LIBRARY_CALL_GRAPH_CONSTRUCTION, LIBRARY_CALL_GRAPH_CONSTRUCTION_DEFAULT);
+		preferences.setDefault(REACHABILITY_RESTRICTIONS, REACHABILITY_RESTRICTIONS_DEFAULT);
 	}
 	
 	/**
@@ -326,12 +328,9 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 	 */
 	public static void restoreDefaults() {
 		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
-		preferences.setValue(GENERAL_LOGGING, GENERAL_LOGGING_DEFAULT);
-		preferences.setValue(INFER_LIBRARY_CALLBACK_ENTRY_POINTS, INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DEFAULT);
-		preferences.setValue(LIBRARY_CALL_GRAPH_CONSTRUCTION, LIBRARY_CALL_GRAPH_CONSTRUCTION_DEFAULT);
+		
 		preferences.setValue(RA_ALGORITHM, RA_ALGORITHM_DEFAULT);
 		preferences.setValue(CHA_ALGORITHM, CHA_ALGORITHM_DEFAULT);
-		preferences.setValue(RRTA_ALGORITHM, RRTA_ALGORITHM_DEFAULT);
 		preferences.setValue(RTA_ALGORITHM, RTA_ALGORITHM_DEFAULT);
 		preferences.setValue(MTA_ALGORITHM, MTA_ALGORITHM_DEFAULT);
 		preferences.setValue(FTA_ALGORITHM, FTA_ALGORITHM_DEFAULT);
@@ -339,6 +338,12 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 		preferences.setValue(XTA_ALGORITHM, XTA_ALGORITHM_DEFAULT);
 		preferences.setValue(XTA2_ALGORITHM, XTA2_ALGORITHM_DEFAULT);
 		preferences.setValue(ZEROCFA_ALGORITHM, ZEROCFA_ALGORITHM_DEFAULT);
+		
+		preferences.setValue(GENERAL_LOGGING, GENERAL_LOGGING_DEFAULT);
+		preferences.setValue(INFER_LIBRARY_CALLBACK_ENTRY_POINTS, INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DEFAULT);
+		preferences.setValue(LIBRARY_CALL_GRAPH_CONSTRUCTION, LIBRARY_CALL_GRAPH_CONSTRUCTION_DEFAULT);
+		preferences.setValue(REACHABILITY_RESTRICTIONS, REACHABILITY_RESTRICTIONS_DEFAULT);
+		
 		loadPreferences();
 	}
 	
@@ -348,12 +353,8 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 	public static void loadPreferences() {
 		try {
 			IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
-			generalLoggingAlgorithmValue = preferences.getBoolean(GENERAL_LOGGING);
-			inferLibraryCallbackEntryPointsValue = preferences.getBoolean(INFER_LIBRARY_CALLBACK_ENTRY_POINTS);
-			libraryCallGraphConstructionAlgorithmValue = preferences.getBoolean(LIBRARY_CALL_GRAPH_CONSTRUCTION);
 			raAlgorithmValue = preferences.getBoolean(RA_ALGORITHM);
 			chaAlgorithmValue = preferences.getBoolean(CHA_ALGORITHM);
-			rrtaAlgorithmValue = preferences.getBoolean(RRTA_ALGORITHM);
 			rtaAlgorithmValue = preferences.getBoolean(RTA_ALGORITHM);
 			mtaAlgorithmValue = preferences.getBoolean(MTA_ALGORITHM);
 			ftaAlgorithmValue = preferences.getBoolean(FTA_ALGORITHM);
@@ -361,6 +362,11 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 			xtaAlgorithmValue = preferences.getBoolean(XTA_ALGORITHM);
 			xta2AlgorithmValue = preferences.getBoolean(XTA2_ALGORITHM);
 			zerocfaAlgorithmValue = preferences.getBoolean(ZEROCFA_ALGORITHM);
+			
+			generalLoggingAlgorithmValue = preferences.getBoolean(GENERAL_LOGGING);
+			inferLibraryCallbackEntryPointsValue = preferences.getBoolean(INFER_LIBRARY_CALLBACK_ENTRY_POINTS);
+			libraryCallGraphConstructionAlgorithmValue = preferences.getBoolean(LIBRARY_CALL_GRAPH_CONSTRUCTION);
+			reachabilityRestrictionsValue = preferences.getBoolean(REACHABILITY_RESTRICTIONS);
 		} catch (Exception e){
 			Log.warning("Error accessing call graph preferences, using defaults...", e);
 		}

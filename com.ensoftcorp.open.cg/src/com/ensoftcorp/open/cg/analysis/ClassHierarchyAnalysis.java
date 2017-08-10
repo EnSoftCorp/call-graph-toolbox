@@ -11,6 +11,7 @@ import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.utils.CallGraphConstruction;
 import com.ensoftcorp.open.commons.utilities.CodeMapChangeListener;
+import com.ensoftcorp.open.java.commons.analysis.CommonQueries;
 
 /**
  * This analysis builds a call graph using Class Hierarchy Analysis (CHA).
@@ -53,7 +54,6 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 		return instance;
 	}
 	
-	private Q containsEdges = Common.universe().edgesTaggedWithAny(XCSG.Contains);
 	private Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
 	private Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
 	private Q invokedFunctionEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedFunction);
@@ -67,11 +67,11 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 		// for each method
 		for(Node method : methods){
 			// for each callsite
-			AtlasSet<Node> callsites = containsEdges.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
+			AtlasSet<Node> callsites = CommonQueries.localDeclarations(Common.toQ(method)).nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
 			for(Node callsite : callsites){
 				if(callsite.taggedWith(XCSG.StaticDispatchCallSite)){
 					// static dispatches (calls to constructors or methods marked as static) can be resolved immediately
-					Node targetMethod = invokedFunctionEdges.successors(Common.toQ(callsite)).eval().nodes().getFirst();
+					Node targetMethod = invokedFunctionEdges.successors(Common.toQ(callsite)).eval().nodes().one();
 					CallGraphConstruction.createCallEdge(callsite, method, targetMethod, CALL, PER_CONTROL_FLOW);
 				} else if(callsite.taggedWith(XCSG.DynamicDispatchCallSite)){
 					// dynamic dispatches require additional analysis to be resolved
@@ -86,7 +86,7 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 					// the nearest method definition is the method definition closest to the declared type (including
 					// the declared type itself) while traversing from declared type to Object on the descendant path
 					// but an easier way to get this is to use Atlas' InvokedSignature edge to get the nearest method definition
-					Node methodSignature = methodSignatureGraph.edges(callsite, NodeDirection.OUT).getFirst().getNode(EdgeDirection.TO);
+					Node methodSignature = methodSignatureGraph.edges(callsite, NodeDirection.OUT).one().getNode(EdgeDirection.TO);
 					Q resolvedDispatches = Common.toQ(methodSignature);
 					
 					// subtypes of the declared type can override the nearest target method definition, 
@@ -107,10 +107,10 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 					// directly, so remove it from the result
 					boolean abstractMethodSignature = methodSignature.taggedWith(XCSG.abstractMethod);
 					if(!abstractMethodSignature){
-						Q methodSignatureType = containsEdges.predecessors(Common.toQ(methodSignature));
-						boolean abstractMethodSignatureType = methodSignatureType.eval().nodes().getFirst().taggedWith(XCSG.Java.AbstractClass);
+						Q methodSignatureType = Common.toQ(methodSignature).parent();
+						boolean abstractMethodSignatureType = methodSignatureType.eval().nodes().one().taggedWith(XCSG.Java.AbstractClass);
 						if(abstractMethodSignatureType){
-							Q resolvedDispatchConcreteSubTypes = containsEdges.predecessors(resolvedDispatches.difference(Common.toQ(methodSignature)))
+							Q resolvedDispatchConcreteSubTypes = resolvedDispatches.difference(Common.toQ(methodSignature)).parent()
 									.difference(Common.universe().nodesTaggedWithAny(XCSG.Java.AbstractClass));
 							if(!resolvedDispatchConcreteSubTypes.eval().nodes().isEmpty()){
 								// there are concrete subtypes
