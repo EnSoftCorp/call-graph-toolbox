@@ -3,6 +3,7 @@ package com.ensoftcorp.open.cg.utils;
 import com.ensoftcorp.atlas.core.db.graph.Edge;
 import com.ensoftcorp.atlas.core.db.graph.Graph;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement;
+import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
@@ -46,6 +47,25 @@ public class CallGraphConstruction {
 		if(perControlFlowEdges.isEmpty()){
 			GraphElement perCFEdge = Graph.U.createEdge(callsite, targetMethod);
 			perCFEdge.tag(callsiteRelationship);
+		}
+	}
+	
+	/**
+	 * Tags and existing call edge and per control flow edge
+	 * @param cgCHA
+	 * @param pcfCHA
+	 * @param callsite
+	 * @param method
+	 * @param targetMethod
+	 * @param CALL
+	 * @param PER_CONTROL_FLOW
+	 */
+	public static void tagExistingCallEdge(Q cgCHA, Q pcfCHA, Node callsite, Node method, Node targetMethod, String CALL, String PER_CONTROL_FLOW) {
+		for(Edge callEdge : cgCHA.between(Common.toQ(method), Common.toQ(targetMethod)).eval().edges()){
+			callEdge.tag(CALL);
+		}
+		for(Edge perControlFlowEdge : cgCHA.between(Common.toQ(callsite), Common.toQ(targetMethod)).eval().edges()){
+			perControlFlowEdge.tag(PER_CONTROL_FLOW);
 		}
 	}
 	

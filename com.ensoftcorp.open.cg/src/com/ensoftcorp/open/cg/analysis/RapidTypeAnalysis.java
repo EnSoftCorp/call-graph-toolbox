@@ -14,6 +14,7 @@ import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.log.Log;
 import com.ensoftcorp.open.cg.preferences.CallGraphPreferences;
+import com.ensoftcorp.open.cg.utils.CallGraphConstruction;
 import com.ensoftcorp.open.commons.utilities.CodeMapChangeListener;
 import com.ensoftcorp.open.java.commons.analysis.CommonQueries;
 import com.ensoftcorp.open.java.commons.analysis.SetDefinitions;
@@ -146,7 +147,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 					if(callsite.taggedWith(XCSG.StaticDispatchCallSite)){
 						// static dispatches (calls to constructors or methods marked as static) can be resolved immediately
 						Node targetMethod = invokedFunctionEdges.successors(Common.toQ(callsite)).eval().nodes().one();
-						tagCallEdge(cgCHA, pcfCHA, callsite, methodToProcess, targetMethod);
+						CallGraphConstruction.tagExistingCallEdge(cgCHA, pcfCHA, callsite, methodToProcess, targetMethod, CALL, PER_CONTROL_FLOW);
 						
 						// add the called method to the list of methods process
 						if(!processedMethods.contains(targetMethod)){
@@ -209,7 +210,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 						
 						// add a call edge to each resolved concrete dispatch
 						for(Node resolvedDispatch : resolvedDispatches.eval().nodes()){
-							tagCallEdge(cgCHA, pcfCHA, callsite, methodToProcess, resolvedDispatch);
+							CallGraphConstruction.tagExistingCallEdge(cgCHA, pcfCHA, callsite, methodToProcess, resolvedDispatch, CALL, PER_CONTROL_FLOW);
 							
 							// add the called method to the list of methods process
 							if(!processedMethods.contains(resolvedDispatch)){
@@ -244,15 +245,6 @@ public class RapidTypeAnalysis extends CGAnalysis {
 			for(Edge pcfRTAEdge : pcfRTA.eval().edges()){
 				pcfRTAEdge.tag(PER_CONTROL_FLOW);
 			}
-		}
-	}
-	
-	private void tagCallEdge(Q cgCHA, Q pcfCHA, Node callsite, Node method, Node targetMethod) {
-		for(Edge callEdge : cgCHA.between(Common.toQ(method), Common.toQ(targetMethod)).eval().edges()){
-			callEdge.tag(CALL);
-		}
-		for(Edge perControlFlowEdge : cgCHA.between(Common.toQ(callsite), Common.toQ(targetMethod)).eval().edges()){
-			perControlFlowEdge.tag(PER_CONTROL_FLOW);
 		}
 	}
 
