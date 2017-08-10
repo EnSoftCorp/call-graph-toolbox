@@ -1,10 +1,7 @@
 package com.ensoftcorp.open.cg.smart;
 
 import com.ensoftcorp.atlas.core.query.Q;
-import com.ensoftcorp.atlas.core.script.Common;
-import com.ensoftcorp.open.cg.analysis.ExceptionTypeAnalysis;
-import com.ensoftcorp.open.cg.analysis.FieldTypeAnalysis;
-import com.ensoftcorp.open.cg.log.Log; 
+import com.ensoftcorp.open.cg.analysis.FieldTypeAnalysis; 
 
 public class FTACallGraphSmartView extends CallGraphSmartView {
 	

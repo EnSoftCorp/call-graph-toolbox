@@ -1,7 +1,5 @@
 package com.ensoftcorp.open.cg.analysis;
 
-import java.util.LinkedList;
-
 import com.ensoftcorp.atlas.core.db.graph.Edge;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.graph.Node;
@@ -15,8 +13,8 @@ import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.log.Log;
 import com.ensoftcorp.open.cg.preferences.CallGraphPreferences;
 import com.ensoftcorp.open.commons.utilities.CodeMapChangeListener;
-import com.ensoftcorp.open.java.commons.analysis.SetDefinitions;
 import com.ensoftcorp.open.java.commons.analysis.CommonQueries;
+import com.ensoftcorp.open.java.commons.analysis.SetDefinitions;
 import com.ensoftcorp.open.java.commons.analyzers.JavaProgramEntryPoints;
 
 /**
@@ -261,7 +259,6 @@ public class RapidTypeAnalysis extends CGAnalysis {
 	 * @param calledMethod
 	 */
 	private static boolean updateCallGraph(AtlasSet<Edge> cgRTA, Node method, AtlasSet<Node> allocationTypes, Edge callEdge, Node calledMethod) {
-		AtlasSet<Node> calledMethods = new AtlasHashSet<Node>();
 		if(Common.toQ(cgRTA).betweenStep(Common.toQ(method), Common.toQ(calledMethod)).eval().edges().isEmpty()){
 			return cgRTA.add(callEdge);
 		}

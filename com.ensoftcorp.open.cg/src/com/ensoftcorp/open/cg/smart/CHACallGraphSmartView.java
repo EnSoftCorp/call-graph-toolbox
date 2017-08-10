@@ -1,9 +1,7 @@
 package com.ensoftcorp.open.cg.smart;
 
 import com.ensoftcorp.atlas.core.query.Q;
-import com.ensoftcorp.atlas.core.script.Common;
-import com.ensoftcorp.open.cg.analysis.ClassHierarchyAnalysis;
-import com.ensoftcorp.open.cg.log.Log; 
+import com.ensoftcorp.open.cg.analysis.ClassHierarchyAnalysis; 
 
 public class CHACallGraphSmartView extends CallGraphSmartView {
 

@@ -1,11 +1,7 @@
 package com.ensoftcorp.open.cg.analysis;
 
-import java.util.LinkedList;
-
 import com.ensoftcorp.atlas.core.db.graph.Edge;
-import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.graph.Node;
-import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Attr;
@@ -16,7 +12,6 @@ import com.ensoftcorp.open.cg.log.Log;
 import com.ensoftcorp.open.cg.preferences.CallGraphPreferences;
 import com.ensoftcorp.open.commons.utilities.CodeMapChangeListener;
 import com.ensoftcorp.open.java.commons.analysis.SetDefinitions;
-import com.ensoftcorp.open.java.commons.analysis.CommonQueries;
 import com.ensoftcorp.open.java.commons.analyzers.JavaProgramEntryPoints;
 
 /**
@@ -77,7 +72,6 @@ public class ReallyRapidTypeAnalysis extends CGAnalysis {
 		Q cgCHA = cha.getCallGraph();
 		
 		// next create some subgraphs to work with
-		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
 		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
 		
 		// locate all the entry point methods
