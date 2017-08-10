@@ -146,7 +146,7 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 	
 	@Override
 	public String getName() {
-		return "0-CFA Analysis";
+		return "0-CFA";
 	}
 
 }
