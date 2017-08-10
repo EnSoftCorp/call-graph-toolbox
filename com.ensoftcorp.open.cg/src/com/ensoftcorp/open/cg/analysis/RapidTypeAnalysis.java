@@ -36,16 +36,15 @@ public class RapidTypeAnalysis extends CGAnalysis {
 	
 	private static RapidTypeAnalysis instance = null;
 	
-	protected RapidTypeAnalysis(boolean libraryCallGraphConstructionEnabled) {
+	protected RapidTypeAnalysis() {
 		// exists only to defeat instantiation
-		super(libraryCallGraphConstructionEnabled);
 	}
 	
 	private static CodeMapChangeListener codeMapChangeListener = null;
 	
-	public static RapidTypeAnalysis getInstance(boolean enableLibraryCallGraphConstruction) {
+	public static RapidTypeAnalysis getInstance() {
 		if (instance == null || (codeMapChangeListener != null && codeMapChangeListener.hasIndexChanged())) {
-			instance = new RapidTypeAnalysis(enableLibraryCallGraphConstruction);
+			instance = new RapidTypeAnalysis();
 			if(codeMapChangeListener == null){
 				codeMapChangeListener = new CodeMapChangeListener();
 				IndexingUtil.addListener(codeMapChangeListener);
@@ -61,17 +60,13 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		// first get the conservative call graph from CHA
 		// for library calls, RTA uses CHA library call edges because assuming every that every type could be allocated
 		// outside of the method and passed into the library is just an expensive way to end back up at CHA
-		ClassHierarchyAnalysis cha = ClassHierarchyAnalysis.getInstance(libraryCallGraphConstructionEnabled);
+		ClassHierarchyAnalysis cha = ClassHierarchyAnalysis.getInstance();
 		
 		// RTA depends on CHA so run the analysis if it hasn't been run already
 		if(!cha.hasRun()){
 			cha.run();
 		}
-		
-		if(libraryCallGraphConstructionEnabled && cha.isLibraryCallGraphConstructionEnabled() != libraryCallGraphConstructionEnabled){
-			Log.warning("ClassHierarchyAnalysis was run without library call edges enabled, "
-					+ "the resulting call graph will be missing the LIBRARY-CALL edges.");
-		}
+
 		Q cgCHA = cha.getCallGraph();
 		Q pcfCHA = cha.getPerControlFlowGraph();
 		
@@ -85,8 +80,8 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		// note that we only need to locate these methods in order to determine the 
 		// allocation types that were initialized outside of the application
 		AtlasSet<Node> mainMethods = JavaProgramEntryPoints.findMainMethods().eval().nodes();
-		if(libraryCallGraphConstructionEnabled || mainMethods.isEmpty()){
-			if(!libraryCallGraphConstructionEnabled && mainMethods.isEmpty()){
+		if(CallGraphPreferences.isLibraryCallGraphConstructionEnabled() || mainMethods.isEmpty()){
+			if(!CallGraphPreferences.isLibraryCallGraphConstructionEnabled() && mainMethods.isEmpty()){
 				Log.warning("Application does not contain a main method, building a call graph using library assumptions.");
 			}
 			// if we are building a call graph for a library there is no main method...
@@ -271,4 +266,8 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		return new String[]{PER_CONTROL_FLOW, ClassHierarchyAnalysis.LIBRARY_PER_CONTROL_FLOW};
 	}
 	
+	@Override
+	public String getName() {
+		return "Rapid Type Analysis";
+	}
 }

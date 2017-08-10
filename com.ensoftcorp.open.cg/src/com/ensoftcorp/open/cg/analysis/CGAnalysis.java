@@ -9,20 +9,10 @@ import com.ensoftcorp.open.cg.log.Log;
 public abstract class CGAnalysis {
 
 	private boolean hasRun = false;
+
+	protected CGAnalysis(){}
 	
-	protected boolean libraryCallGraphConstructionEnabled;
-	
-	protected CGAnalysis(boolean libraryCallGraphConstructionEnabled){
-		this.libraryCallGraphConstructionEnabled = libraryCallGraphConstructionEnabled;
-	}
-	
-	/**
-	 * Returns true if library call graph construction is enabled
-	 * @return
-	 */
-	public boolean isLibraryCallGraphConstructionEnabled(){
-		return libraryCallGraphConstructionEnabled;
-	}
+	public abstract String getName();
 	
 	/**
 	 * Returns the call graph produced by the algorithm

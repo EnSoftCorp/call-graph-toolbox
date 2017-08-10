@@ -36,41 +36,40 @@ public class CallGraphCodemapStage extends PrioritizedCodemapStage {
 
 	@Override
 	public void performIndexing(IProgressMonitor monitor) {
-		boolean enableLibraryCallGraphConstruction = CallGraphPreferences.isLibraryCallGraphConstructionEnabled();
 		if(CallGraphPreferences.isReachabilityAnalysisEnabled()){
-			ReachabilityAnalysis ra = ReachabilityAnalysis.getInstance(enableLibraryCallGraphConstruction);
+			ReachabilityAnalysis ra = ReachabilityAnalysis.getInstance();
 			ra.run();
 		}
 		if(CallGraphPreferences.isClassHierarchyAnalysisEnabled()){
-			ClassHierarchyAnalysis cha = ClassHierarchyAnalysis.getInstance(enableLibraryCallGraphConstruction);
+			ClassHierarchyAnalysis cha = ClassHierarchyAnalysis.getInstance();
 			cha.run();
 		}
 		if(CallGraphPreferences.isRapidTypeAnalysisEnabled()){
-			RapidTypeAnalysis rta = RapidTypeAnalysis.getInstance(enableLibraryCallGraphConstruction);
+			RapidTypeAnalysis rta = RapidTypeAnalysis.getInstance();
 			rta.run();
 		}
 		if(CallGraphPreferences.isMethodTypeAnalysisEnabled()){
-			MethodTypeAnalysis mta = MethodTypeAnalysis.getInstance(enableLibraryCallGraphConstruction);
+			MethodTypeAnalysis mta = MethodTypeAnalysis.getInstance();
 			mta.run();
 		}
 		if(CallGraphPreferences.isFieldTypeAnalysisEnabled()){
-			FieldTypeAnalysis fta = FieldTypeAnalysis.getInstance(enableLibraryCallGraphConstruction);
+			FieldTypeAnalysis fta = FieldTypeAnalysis.getInstance();
 			fta.run();
 		}
 		if(CallGraphPreferences.isExceptionTypeAnalysisEnabled()){
-			ExceptionTypeAnalysis eta = ExceptionTypeAnalysis.getInstance(enableLibraryCallGraphConstruction);
+			ExceptionTypeAnalysis eta = ExceptionTypeAnalysis.getInstance();
 			eta.run();
 		}
 		if(CallGraphPreferences.isClassicHybridTypeAnalysisEnabled()){
-			ClassicHybridTypeAnalysis xta = ClassicHybridTypeAnalysis.getInstance(enableLibraryCallGraphConstruction);
+			ClassicHybridTypeAnalysis xta = ClassicHybridTypeAnalysis.getInstance();
 			xta.run();
 		}
 		if(CallGraphPreferences.isHybridTypeAnalysisEnabled()){
-			HybridTypeAnalysis xta2 = HybridTypeAnalysis.getInstance(enableLibraryCallGraphConstruction);
+			HybridTypeAnalysis xta2 = HybridTypeAnalysis.getInstance();
 			xta2.run();
 		}
 		if(CallGraphPreferences.isZeroCFAEnabled()){
-			ZeroControlFlowAnalysis zeroCFA = ZeroControlFlowAnalysis.getInstance(enableLibraryCallGraphConstruction);
+			ZeroControlFlowAnalysis zeroCFA = ZeroControlFlowAnalysis.getInstance();
 			zeroCFA.run();
 		}
 	}

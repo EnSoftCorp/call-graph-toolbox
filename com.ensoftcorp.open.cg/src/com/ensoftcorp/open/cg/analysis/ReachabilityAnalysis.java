@@ -9,6 +9,7 @@ import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.script.CommonQueries;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
+import com.ensoftcorp.open.cg.preferences.CallGraphPreferences;
 import com.ensoftcorp.open.cg.utils.CallGraphConstruction;
 import com.ensoftcorp.open.commons.utilities.CodeMapChangeListener;
 import com.ensoftcorp.open.java.commons.wishful.JavaStopGap;
@@ -34,16 +35,15 @@ public class ReachabilityAnalysis extends CGAnalysis {
 	
 	private static ReachabilityAnalysis instance = null;
 	
-	protected ReachabilityAnalysis(boolean libraryCallGraphConstructionEnabled) {
+	protected ReachabilityAnalysis() {
 		// exists only to defeat instantiation
-		super(libraryCallGraphConstructionEnabled);
 	}
 	
 	private static CodeMapChangeListener codeMapChangeListener = null;
 	
-	public static ReachabilityAnalysis getInstance(boolean enableLibraryCallGraphConstruction) {
+	public static ReachabilityAnalysis getInstance() {
 		if (instance == null || (codeMapChangeListener != null && codeMapChangeListener.hasIndexChanged())) {
-			instance = new ReachabilityAnalysis(enableLibraryCallGraphConstruction);
+			instance = new ReachabilityAnalysis();
 			if(codeMapChangeListener == null){
 				codeMapChangeListener = new CodeMapChangeListener();
 				IndexingUtil.addListener(codeMapChangeListener);
@@ -80,7 +80,7 @@ public class ReachabilityAnalysis extends CGAnalysis {
 					for(Node reachableMethod : reachableMethods){
 						// dispatches cannot happen to abstract methods
 						if(reachableMethod.taggedWith(XCSG.abstractMethod)){
-							if(libraryCallGraphConstructionEnabled){
+							if(CallGraphPreferences.isLibraryCallGraphConstructionEnabled()){
 								// if library call graph construction is enabled then we will consider adding a special edge type
 								// in the case that the method signature was abstract since we may not have been able to resolve any
 								// dispatch targets (in the case the method is not implemented in the library) and since we cannot know 
@@ -195,6 +195,11 @@ public class ReachabilityAnalysis extends CGAnalysis {
 	@Override
 	public String[] getPerControlFlowEdgeTags() {
 		return new String[]{PER_CONTROL_FLOW, LIBRARY_PER_CONTROL_FLOW};
+	}
+	
+	@Override
+	public String getName() {
+		return "Reachability Analysis";
 	}
 	
 }

@@ -12,6 +12,7 @@ import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.log.Log;
+import com.ensoftcorp.open.cg.preferences.CallGraphPreferences;
 import com.ensoftcorp.open.commons.analysis.SetDefinitions;
 import com.ensoftcorp.open.commons.utilities.CodeMapChangeListener;
 import com.ensoftcorp.open.java.commons.analysis.CommonQueries;
@@ -39,16 +40,15 @@ public class ClassicHybridTypeAnalysis extends CGAnalysis {
 	
 	private static ClassicHybridTypeAnalysis instance = null;
 	
-	protected ClassicHybridTypeAnalysis(boolean libraryCallGraphConstructionEnabled) {
+	protected ClassicHybridTypeAnalysis() {
 		// exists only to defeat instantiation
-		super(libraryCallGraphConstructionEnabled);
 	}
 	
 	private static CodeMapChangeListener codeMapChangeListener = null;
 	
-	public static ClassicHybridTypeAnalysis getInstance(boolean enableLibraryCallGraphConstruction) {
+	public static ClassicHybridTypeAnalysis getInstance() {
 		if (instance == null || (codeMapChangeListener != null && codeMapChangeListener.hasIndexChanged())) {
-			instance = new ClassicHybridTypeAnalysis(enableLibraryCallGraphConstruction);
+			instance = new ClassicHybridTypeAnalysis();
 			if(codeMapChangeListener == null){
 				codeMapChangeListener = new CodeMapChangeListener();
 				IndexingUtil.addListener(codeMapChangeListener);
@@ -64,11 +64,7 @@ public class ClassicHybridTypeAnalysis extends CGAnalysis {
 		// first get the conservative call graph from CHA
 		// for library calls, RTA uses CHA library call edges because assuming every that every type could be allocated
 		// outside of the method and passed into the library is just an expensive way to end back up at CHA
-		ClassHierarchyAnalysis cha = ClassHierarchyAnalysis.getInstance(libraryCallGraphConstructionEnabled);
-		if(libraryCallGraphConstructionEnabled && cha.isLibraryCallGraphConstructionEnabled() != libraryCallGraphConstructionEnabled){
-			Log.warning("ClassHierarchyAnalysis was run without library call edges enabled, "
-					+ "the resulting call graph will be missing the LIBRARY-CALL edges.");
-		}
+		ClassHierarchyAnalysis cha = ClassHierarchyAnalysis.getInstance();
 		Q cgCHA = cha.getCallGraph();
 		
 		// next create some subgraphs to work with
@@ -81,8 +77,8 @@ public class ClassicHybridTypeAnalysis extends CGAnalysis {
 		LinkedList<Node> worklist = new LinkedList<Node>();
 
 		AtlasSet<Node> mainMethods = JavaProgramEntryPoints.findMainMethods().eval().nodes();
-		if(libraryCallGraphConstructionEnabled || mainMethods.isEmpty()){
-			if(!libraryCallGraphConstructionEnabled && mainMethods.isEmpty()){
+		if(CallGraphPreferences.isLibraryCallGraphConstructionEnabled() || mainMethods.isEmpty()){
+			if(!CallGraphPreferences.isLibraryCallGraphConstructionEnabled() && mainMethods.isEmpty()){
 				Log.warning("Application does not contain a main method, building a call graph using library assumptions.");
 			}
 			// if we are building a call graph for a library there is no main method...
@@ -255,6 +251,11 @@ public class ClassicHybridTypeAnalysis extends CGAnalysis {
 	@Override
 	public String[] getPerControlFlowEdgeTags() {
 		return new String[]{PER_CONTROL_FLOW, ClassHierarchyAnalysis.LIBRARY_PER_CONTROL_FLOW};
+	}
+	
+	@Override
+	public String getName() {
+		return "Classic Hybrid Type Analysis";
 	}
 	
 }

@@ -29,31 +29,31 @@ public class Stats {
 		FileWriter fw = new FileWriter(outputFile);
 		fw.write("Algorithm,Time,Nodes,Edges,# Callsites,# Static Dispatches,# Dynamic Dispatches,Min Dynamic Dispatch Targets Per Callsite,Max Dynamic Dispatch Targets Per Callsite,Average Dynamic Dispatch Targets Per Callsite\n");
 		
-		ReachabilityAnalysis ra = ReachabilityAnalysis.getInstance(enableCallGraphConstruction);
+		ReachabilityAnalysis ra = ReachabilityAnalysis.getInstance();
 		dumpStats(ra, fw);
 		
-		ClassHierarchyAnalysis cha = ClassHierarchyAnalysis.getInstance(enableCallGraphConstruction);
+		ClassHierarchyAnalysis cha = ClassHierarchyAnalysis.getInstance();
 		dumpStats(cha, fw);
 		
-		RapidTypeAnalysis rta = RapidTypeAnalysis.getInstance(enableCallGraphConstruction);
+		RapidTypeAnalysis rta = RapidTypeAnalysis.getInstance();
 		dumpStats(rta, fw);
 		
-		FieldTypeAnalysis fta = FieldTypeAnalysis.getInstance(enableCallGraphConstruction);
+		FieldTypeAnalysis fta = FieldTypeAnalysis.getInstance();
 		dumpStats(fta, fw);
 		
-		MethodTypeAnalysis mta = MethodTypeAnalysis.getInstance(enableCallGraphConstruction);
+		MethodTypeAnalysis mta = MethodTypeAnalysis.getInstance();
 		dumpStats(mta, fw);
 		
-		ExceptionTypeAnalysis eta = ExceptionTypeAnalysis.getInstance(enableCallGraphConstruction);
+		ExceptionTypeAnalysis eta = ExceptionTypeAnalysis.getInstance();
 		dumpStats(eta, fw);
 		
-		ClassicHybridTypeAnalysis cxta = ClassicHybridTypeAnalysis.getInstance(enableCallGraphConstruction);
+		ClassicHybridTypeAnalysis cxta = ClassicHybridTypeAnalysis.getInstance();
 		dumpStats(cxta, fw);
 		
-		HybridTypeAnalysis xta = HybridTypeAnalysis.getInstance(enableCallGraphConstruction);
+		HybridTypeAnalysis xta = HybridTypeAnalysis.getInstance();
 		dumpStats(xta, fw);
 		
-		ZeroControlFlowAnalysis zcfa = ZeroControlFlowAnalysis.getInstance(enableCallGraphConstruction);
+		ZeroControlFlowAnalysis zcfa = ZeroControlFlowAnalysis.getInstance();
 		dumpStats(zcfa, fw);
 		
 		fw.close();

@@ -9,6 +9,7 @@ import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
+import com.ensoftcorp.open.cg.preferences.CallGraphPreferences;
 import com.ensoftcorp.open.cg.utils.CallGraphConstruction;
 import com.ensoftcorp.open.commons.utilities.CodeMapChangeListener;
 import com.ensoftcorp.open.java.commons.analysis.CommonQueries;
@@ -34,16 +35,15 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 	
 	private static ClassHierarchyAnalysis instance = null;
 	
-	protected ClassHierarchyAnalysis(boolean libraryCallGraphConstructionEnabled) {
+	protected ClassHierarchyAnalysis() {
 		// exists only to defeat instantiation
-		super(libraryCallGraphConstructionEnabled);
 	}
 	
 	private static CodeMapChangeListener codeMapChangeListener = null;
 	
-	public static ClassHierarchyAnalysis getInstance(boolean enableLibraryCallGraphConstruction) {
+	public static ClassHierarchyAnalysis getInstance() {
 		if (instance == null || (codeMapChangeListener != null && codeMapChangeListener.hasIndexChanged())) {
-			instance = new ClassHierarchyAnalysis(enableLibraryCallGraphConstruction);
+			instance = new ClassHierarchyAnalysis();
 			if(codeMapChangeListener == null){
 				codeMapChangeListener = new CodeMapChangeListener();
 				IndexingUtil.addListener(codeMapChangeListener);
@@ -132,7 +132,7 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 					// dispatch targets (in the case the method is not implemented in the library)
 					// of course the application could override any non-final methods anyway but we can't say anything
 					// about that at this time
-					if(libraryCallGraphConstructionEnabled){
+					if(CallGraphPreferences.isLibraryCallGraphConstructionEnabled()){
 						if(methodSignature.taggedWith(XCSG.abstractMethod)){
 							CallGraphConstruction.createCallEdge(callsite, method, methodSignature, LIBRARY_CALL, LIBRARY_PER_CONTROL_FLOW);
 						}
@@ -150,6 +150,11 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 	@Override
 	public String[] getPerControlFlowEdgeTags() {
 		return new String[]{PER_CONTROL_FLOW, LIBRARY_PER_CONTROL_FLOW};
+	}
+
+	@Override
+	public String getName() {
+		return "Class Hierarchy Analysis";
 	}
 
 }

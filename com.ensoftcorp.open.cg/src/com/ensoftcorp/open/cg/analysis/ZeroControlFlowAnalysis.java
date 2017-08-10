@@ -12,7 +12,6 @@ import com.ensoftcorp.atlas.core.query.Attr;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
-import com.ensoftcorp.open.cg.log.Log;
 import com.ensoftcorp.open.commons.utilities.CodeMapChangeListener;
 import com.ensoftcorp.open.pointsto.common.PointsToAnalysis;
 import com.ensoftcorp.open.pointsto.preferences.PointsToPreferences;
@@ -38,16 +37,15 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 	
 	private static ZeroControlFlowAnalysis instance = null;
 	
-	protected ZeroControlFlowAnalysis(boolean libraryCallGraphConstructionEnabled) {
+	protected ZeroControlFlowAnalysis() {
 		// exists only to defeat instantiation
-		super(libraryCallGraphConstructionEnabled);
 	}
 	
 	private static CodeMapChangeListener codeMapChangeListener = null;
 	
-	public static ZeroControlFlowAnalysis getInstance(boolean enableLibraryCallGraphConstruction) {
+	public static ZeroControlFlowAnalysis getInstance() {
 		if (instance == null || (codeMapChangeListener != null && codeMapChangeListener.hasIndexChanged())) {
-			instance = new ZeroControlFlowAnalysis(enableLibraryCallGraphConstruction);
+			instance = new ZeroControlFlowAnalysis();
 			if(codeMapChangeListener == null){
 				codeMapChangeListener = new CodeMapChangeListener();
 				IndexingUtil.addListener(codeMapChangeListener);
@@ -71,16 +69,9 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 //		}
 		
 		// library call edges are conservatively covered by a CHA, otherwise CHA is not used by k-CFA
-		if(libraryCallGraphConstructionEnabled){
-			ClassHierarchyAnalysis cha = ClassHierarchyAnalysis.getInstance(libraryCallGraphConstructionEnabled);
-			if(cha.isLibraryCallGraphConstructionEnabled() != libraryCallGraphConstructionEnabled){
-				Log.warning("ClassHierarchyAnalysis was run without library call edges enabled, "
-						+ "the resulting call graph will be missing the LIBRARY-CALL edges.");
-			} else {
-				if(!cha.hasRun()){
-					cha.run();
-				}
-			}
+		ClassHierarchyAnalysis cha = ClassHierarchyAnalysis.getInstance();
+		if(!cha.hasRun()){
+			cha.run();
 		}
 
 		// the points-to analysis just infers data flow edges
@@ -151,6 +142,11 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 	@Override
 	public String[] getPerControlFlowEdgeTags() {
 		return new String[]{PER_CONTROL_FLOW, ClassHierarchyAnalysis.LIBRARY_PER_CONTROL_FLOW};
+	}
+	
+	@Override
+	public String getName() {
+		return "0-CFA Analysis";
 	}
 
 }
