@@ -2,6 +2,7 @@ package com.ensoftcorp.open.cg.summary;
 
 import java.util.Iterator;
 
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
@@ -53,6 +54,7 @@ public class MethodSummary {
 					IntInsnNode instruction = (IntInsnNode) abstractInstruction;
 				} else if (abstractInstruction instanceof InvokeDynamicInsnNode) {
 					InvokeDynamicInsnNode instruction = (InvokeDynamicInsnNode) abstractInstruction;
+					// https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.invokedynamic
 				} else if (abstractInstruction instanceof JumpInsnNode) {
 					JumpInsnNode instruction = (JumpInsnNode) abstractInstruction;
 				} else if (abstractInstruction instanceof LabelNode) {
@@ -65,13 +67,30 @@ public class MethodSummary {
 					LookupSwitchInsnNode instruction = (LookupSwitchInsnNode) abstractInstruction;
 				} else if (abstractInstruction instanceof MethodInsnNode) {
 					MethodInsnNode instruction = (MethodInsnNode) abstractInstruction;
-					
-					// TODO: implement
-					String qualifiedMethodName = instruction.owner + "." + instruction.name;
-					
-//					if (instruction.getOpcode() == Opcodes.INVOKESTATIC) {
-//					if (instruction.getOpcode() == Opcodes.INVOKESPECIAL) {
-					
+					if(instruction.getOpcode() == Opcodes.INVOKESTATIC) {
+						// https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.invokestatic
+						String targetMethodPackage = instruction.owner.replace("/", "."); // ex: java/util/Objects
+						String targetMethod = instruction.name; // ex: requireNonNull
+						String targetMethodParameters = instruction.desc; // ex: (Ljava/lang/Object;)Ljava/lang/Object;
+					} else if(instruction.getOpcode() == Opcodes.INVOKEVIRTUAL || instruction.getOpcode() == Opcodes.INVOKEINTERFACE) {
+						// https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.invokevirtual
+						// https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.invokeinterface
+						String targetMethodPackage = instruction.owner.replace("/", "."); // ex: java/util/AbstractCollection, java/util/Iterator
+						String targetMethod = instruction.name; // ex: size, hasNext
+						String targetMethodParameters = instruction.desc; // ex: ()I, ()Z
+					} else if(instruction.getOpcode() == Opcodes.INVOKESPECIAL) {
+						//https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.invokespecial
+						// new instantiation
+						if(instruction.name.equals("<init>")){
+							String instantiationType = instruction.owner.replace("/", "."); // ex: java/lang/UnsupportedOperationException
+							String parameters = instruction.desc; // ex: (Ljava/lang/String;)V
+						} else {
+							// TODO: super method calls...
+							String targetMethodPackage = instruction.owner.replace("/", "."); // ex: java/util/Locale
+							String targetMethod = instruction.name; // ex: getDisplayString
+							String targetMethodParameters = instruction.desc; // ex: (Ljava/lang/String;Ljava/util/Locale;I)Ljava/lang/String;
+						}
+					}
 				} else if (abstractInstruction instanceof MultiANewArrayInsnNode) {
 					MultiANewArrayInsnNode instruction = (MultiANewArrayInsnNode) abstractInstruction;
 				} else if (abstractInstruction instanceof TableSwitchInsnNode) {

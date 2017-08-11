@@ -64,6 +64,46 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 	
 	@Override
 	protected void runAnalysis() {
+//		// add callsite summaries for each library method
+//		for(Node library : Common.universe().nodes(XCSG.Library).eval().nodes()){
+//			try {
+//				// TODO: how SHOULD I be getting the path to the library???
+//				String id = library.getAttr(XCSG.id).toString();
+//				id = id.substring(1, id.length()-1);
+//				String[] idParts = id.split("#");
+//				File libraryFile = null; 
+//				for(int i=0; i<idParts.length; i++){
+//					String libraryPath = idParts[i];
+//					libraryFile = new File(libraryPath);
+//					if(libraryFile.exists()){
+//						break;
+//					}
+//				}
+//				if(libraryFile == null || !libraryFile.exists()){
+//					throw new RuntimeException("Could not locate library file");
+//				}
+//				JarInspector jarInspector = new JarInspector(libraryFile);
+//				for(String entry : jarInspector.getJarEntrySet()){
+//					if(entry.endsWith(".class")){
+//						String typeString = entry.replace(".class", "").replace("/", ".");
+//						if(typeString.contains("$")){
+////							Log.warning("Skipping summaries of inner classes");
+//						} else {
+//							String pkgName = typeString.substring(0,typeString.lastIndexOf("."));
+//							String typeName = typeString.substring(pkgName.length()+1, typeString.length());
+//							Node type = Common.typeSelect(pkgName, typeName).eval().nodes().one();
+//							if(type != null){
+//								ClassNode classNode = BytecodeUtils.getClassNode(jarInspector.extractEntry(entry));
+//								MethodSummary.summarizeCallsites(classNode, type);
+//							}
+//						}
+//					}
+//				}
+//			} catch (Exception e){
+//				Log.warning("Could not summarize callsites in library: " + library.getAttr(XCSG.name) + "\n" + library.toString(), e);
+//			}
+//		}
+		
 		// for each method
 		for(Node method : methods){
 			// for each callsite
