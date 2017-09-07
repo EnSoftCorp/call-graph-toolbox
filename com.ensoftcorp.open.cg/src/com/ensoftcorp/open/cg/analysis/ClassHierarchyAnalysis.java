@@ -1,5 +1,9 @@
 package com.ensoftcorp.open.cg.analysis;
 
+import java.io.File;
+
+import org.objectweb.asm.tree.ClassNode;
+
 import com.ensoftcorp.atlas.core.db.graph.Graph;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.NodeDirection;
@@ -9,7 +13,11 @@ import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
+import com.ensoftcorp.open.cg.log.Log;
 import com.ensoftcorp.open.cg.preferences.CallGraphPreferences;
+import com.ensoftcorp.open.cg.summary.BytecodeUtils;
+import com.ensoftcorp.open.cg.summary.JarInspector;
+import com.ensoftcorp.open.cg.summary.MethodSummary;
 import com.ensoftcorp.open.cg.utils.CallGraphConstruction;
 import com.ensoftcorp.open.commons.utilities.CodeMapChangeListener;
 import com.ensoftcorp.open.java.commons.analysis.CommonQueries;
