@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?compositeArtifactRepository version='1.0.0'?>
+<repository name='Atlas Toolboxes' type='org.eclipse.equinox.internal.p2.artifact.repository.CompositeArtifactRepository' version='2.0.3'>
+  <properties size='2'>
+    <property name='p2.timestamp' value='1483488000'/>
+    <property name='p2.compressed' value='false'/>
+  </properties>
+  <children size='1'>
+    <child location='3.1.6'/>
+  </children>
+</repository>

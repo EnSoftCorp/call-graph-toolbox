@@ -27,6 +27,10 @@ If you want to install from source for bleeding edge changes, first grab a copy 
 ## Changelog
 Note that version numbers are based off [Atlas](http://www.ensoftcorp.com/atlas/download/) version numbers.
 
+### 3.1.6
+- Bug fixes (particularly RTA was implemented incorrectly)
+- Updated dependencies
+
 ### 3.0.10
 - Bumped version number for Atlas 3.0.10
 
