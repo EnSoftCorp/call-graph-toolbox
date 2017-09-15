@@ -2,6 +2,8 @@ package com.ensoftcorp.open.cg.analysis;
 
 import java.io.File;
 
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.objectweb.asm.tree.ClassNode;
 
 import com.ensoftcorp.atlas.core.db.graph.Graph;
@@ -72,7 +74,7 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 	
 	@Override
 	protected void runAnalysis() {
-//		// add callsite summaries for each library method
+		// add callsite summaries for each library method
 //		for(Node library : Common.universe().nodes(XCSG.Library).eval().nodes()){
 //			try {
 //				// TODO: how SHOULD I be getting the path to the library???
@@ -80,33 +82,51 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 //				id = id.substring(1, id.length()-1);
 //				String[] idParts = id.split("#");
 //				File libraryFile = null; 
-//				for(int i=0; i<idParts.length; i++){
-//					String libraryPath = idParts[i];
-//					libraryFile = new File(libraryPath);
-//					if(libraryFile.exists()){
-//						break;
-//					}
-//				}
-//				if(libraryFile == null || !libraryFile.exists()){
-//					throw new RuntimeException("Could not locate library file");
-//				}
-//				JarInspector jarInspector = new JarInspector(libraryFile);
-//				for(String entry : jarInspector.getJarEntrySet()){
-//					if(entry.endsWith(".class")){
-//						String typeString = entry.replace(".class", "").replace("/", ".");
-//						if(typeString.contains("$")){
-////							Log.warning("Skipping summaries of inner classes");
-//						} else {
-//							String pkgName = typeString.substring(0,typeString.lastIndexOf("."));
-//							String typeName = typeString.substring(pkgName.length()+1, typeString.length());
-//							Node type = Common.typeSelect(pkgName, typeName).eval().nodes().one();
-//							if(type != null){
-//								ClassNode classNode = BytecodeUtils.getClassNode(jarInspector.extractEntry(entry));
-//								MethodSummary.summarizeCallsites(classNode, type);
-//							}
+//				String libraryPath = idParts[0];
+//				libraryFile = new File(libraryPath);
+//				if(!libraryFile.exists()){
+//					for(Node projectNode : Common.universe().nodes(XCSG.Project).eval().nodes()){
+//						IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectNode.getAttr(XCSG.name).toString());
+//						libraryFile = new File(libraryPath.replace("C:\\", project.getLocation().toFile().getParentFile().getCanonicalPath() + File.separator));
+//						if(libraryFile.exists()){
+//							break;
 //						}
 //					}
 //				}
+//				if(libraryFile == null || !libraryFile.exists()){
+//					throw new RuntimeException("Could not locate library file for " + library.getAttr(XCSG.name).toString());
+//				}
+//				
+//				// get the entry for each type in the library
+//				JarInspector jarInspector = new JarInspector(libraryFile);
+//				for(Node type : Common.toQ(library).contained().nodes(XCSG.Java.AbstractClass, XCSG.Java.Class).eval().nodes()){
+//					String entry = type.getAttr(XCSG.name).toString().replace(".", "/") + ".class";
+//					byte[] classBytes = jarInspector.extractEntry(entry);
+//					if(classBytes != null){
+//						ClassNode classNode = BytecodeUtils.getClassNode(jarInspector.extractEntry(entry));
+//						MethodSummary.summarizeCallsites(classNode, type);
+//					} else {
+//						Log.warning("Could not locate " + entry);
+//					}
+//				}
+//				
+//
+////				for(String entry : jarInspector.getJarEntrySet()){
+////					if(entry.endsWith(".class")){
+////						String typeString = entry.replace(".class", "").replace("/", ".");
+////						if(typeString.contains("$")){
+//////							Log.warning("Skipping summaries of inner classes");
+////						} else {
+////							String pkgName = typeString.substring(0,typeString.lastIndexOf("."));
+////							String typeName = typeString.substring(pkgName.length()+1, typeString.length());
+////							Node type = Common.typeSelect(pkgName, typeName).eval().nodes().one();
+////							if(type != null){
+////								ClassNode classNode = BytecodeUtils.getClassNode(jarInspector.extractEntry(entry));
+////								MethodSummary.summarizeCallsites(classNode, type);
+////							}
+////						}
+////					}
+////				}
 //			} catch (Exception e){
 //				Log.warning("Could not summarize callsites in library: " + library.getAttr(XCSG.name) + "\n" + library.toString(), e);
 //			}
