@@ -64,78 +64,79 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 		return instance;
 	}
 	
-	private Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
-	private Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
-	private Q invokedFunctionEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedFunction);
-	private Q identityPassedToEdges = Common.universe().edgesTaggedWithAny(XCSG.IdentityPassedTo);
-	private Q dataFlowEdges = Common.universe().edgesTaggedWithAny(XCSG.DataFlow_Edge);
-	private Graph methodSignatureGraph = Common.universe().edgesTaggedWithAny(XCSG.InvokedSignature).eval();
-	private AtlasSet<Node> methods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
+	private Q typeHierarchy;
+	private Q typeOfEdges;
+	private Q invokedFunctionEdges;
+	private Q identityPassedToEdges;
+	private Q dataFlowEdges;
+	private Graph methodSignatureGraph;
+	private AtlasSet<Node> methods;
 	
 	@Override
 	protected void runAnalysis() {
 		// add callsite summaries for each library method
-//		for(Node library : Common.universe().nodes(XCSG.Library).eval().nodes()){
-//			try {
-//				// TODO: how SHOULD I be getting the path to the library???
-//				String id = library.getAttr(XCSG.id).toString();
-//				id = id.substring(1, id.length()-1);
-//				String[] idParts = id.split("#");
-//				File libraryFile = null; 
-//				String libraryPath = idParts[0];
-//				libraryFile = new File(libraryPath);
-//				if(!libraryFile.exists()){
-//					for(Node projectNode : Common.universe().nodes(XCSG.Project).eval().nodes()){
-//						IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectNode.getAttr(XCSG.name).toString());
-//						libraryFile = new File(libraryPath.replace("C:\\", project.getLocation().toFile().getParentFile().getCanonicalPath() + File.separator));
-//						if(libraryFile.exists()){
-//							break;
-//						}
-//					}
+		for(Node library : Common.universe().nodes(XCSG.Library).eval().nodes()){
+			try {
+				// TODO: how SHOULD I be getting the path to the library???
+				String id = library.getAttr(XCSG.id).toString();
+				id = id.substring(1, id.length()-1);
+				String[] idParts = id.split("#");
+				File libraryFile = null; 
+				String libraryPath = idParts[0];
+				libraryFile = new File(libraryPath);
+				if(!libraryFile.exists()){
+					for(Node projectNode : Common.universe().nodes(XCSG.Project).eval().nodes()){
+						IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectNode.getAttr(XCSG.name).toString());
+						libraryFile = new File(libraryPath.replace("C:\\", project.getLocation().toFile().getParentFile().getCanonicalPath() + File.separator));
+						if(libraryFile.exists()){
+							break;
+						}
+					}
+				}
+				if(libraryFile == null || !libraryFile.exists()){
+					throw new RuntimeException("Could not locate library file for " + library.getAttr(XCSG.name).toString());
+				} else {
+					libraryPath = libraryFile.getCanonicalPath();
+				}
+				
+//				if(libraryFile.getName().endsWith("rt.jar")){
+//					continue; // TODO: remove after debugging
 //				}
-//				if(libraryFile == null || !libraryFile.exists()){
-//					throw new RuntimeException("Could not locate library file for " + library.getAttr(XCSG.name).toString());
-//				}
-//				
-//				// get the entry for each type in the library
-//				JarInspector jarInspector = new JarInspector(libraryFile);
-//				for(Node type : Common.toQ(library).contained().nodes(XCSG.Java.AbstractClass, XCSG.Java.Class).eval().nodes()){
-//					String entry = type.getAttr(XCSG.name).toString().replace(".", "/") + ".class";
-//					byte[] classBytes = jarInspector.extractEntry(entry);
-//					if(classBytes != null){
-//						ClassNode classNode = BytecodeUtils.getClassNode(jarInspector.extractEntry(entry));
-//						MethodSummary.summarizeCallsites(classNode, type);
-//					} else {
-//						Log.warning("Could not locate " + entry);
-//					}
-//				}
-//				
-//
-////				for(String entry : jarInspector.getJarEntrySet()){
-////					if(entry.endsWith(".class")){
-////						String typeString = entry.replace(".class", "").replace("/", ".");
-////						if(typeString.contains("$")){
-//////							Log.warning("Skipping summaries of inner classes");
-////						} else {
-////							String pkgName = typeString.substring(0,typeString.lastIndexOf("."));
-////							String typeName = typeString.substring(pkgName.length()+1, typeString.length());
-////							Node type = Common.typeSelect(pkgName, typeName).eval().nodes().one();
-////							if(type != null){
-////								ClassNode classNode = BytecodeUtils.getClassNode(jarInspector.extractEntry(entry));
-////								MethodSummary.summarizeCallsites(classNode, type);
-////							}
-////						}
-////					}
-////				}
-//			} catch (Exception e){
-//				Log.warning("Could not summarize callsites in library: " + library.getAttr(XCSG.name) + "\n" + library.toString(), e);
-//			}
-//		}
+				
+				// get the entry for each type in the library
+				JarInspector jarInspector = new JarInspector(libraryFile);
+				for(Node type : Common.toQ(library).contained().nodes(XCSG.Java.AbstractClass, XCSG.Java.Class).eval().nodes()){
+					Node pkg = Common.toQ(type).parent().nodes(XCSG.Package).eval().nodes().one();
+					if(pkg != null){
+						String entry = pkg.getAttr(XCSG.name).toString().replace(".", "/") + "/" + type.getAttr(XCSG.name).toString() + ".class";
+						byte[] classBytes = jarInspector.extractEntry(entry);
+						if(classBytes != null){
+							ClassNode classNode = BytecodeUtils.getClassNode(jarInspector.extractEntry(entry));
+							MethodSummary.summarizeCallsites(classNode, type);
+						} else {
+							Log.warning("Could not locate " + entry);
+						}
+					} else {
+						Log.warning("Type " + type.getAttr(XCSG.name)+ " has no package.");
+					}
+				}
+			} catch (Exception e){
+				Log.warning("Could not summarize callsites in library: " + library.getAttr(XCSG.name) + "\n" + library.toString(), e);
+			}
+		}
+		
+		typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
+		typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
+		invokedFunctionEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedFunction);
+		identityPassedToEdges = Common.universe().edgesTaggedWithAny(XCSG.IdentityPassedTo);
+		dataFlowEdges = Common.universe().edgesTaggedWithAny(XCSG.DataFlow_Edge);
+		methodSignatureGraph = Common.universe().edgesTaggedWithAny(XCSG.InvokedSignature).eval();
+		methods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
 		
 		// for each method
 		for(Node method : methods){
 			// for each callsite
-			AtlasSet<Node> callsites = CommonQueries.localDeclarations(Common.toQ(method)).nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
+			AtlasSet<Node> callsites = CommonQueries.localDeclarations(Common.universe(), Common.toQ(method)).nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
 			for(Node callsite : callsites){
 				if(callsite.taggedWith(XCSG.StaticDispatchCallSite)){
 					// static dispatches (calls to constructors or methods marked as static) can be resolved immediately
@@ -160,11 +161,11 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 					// subtypes of the declared type can override the nearest target method definition, 
 					// so make sure to include all the subtype method definitions
 					Q declaredSubtypeHierarchy = typeHierarchy.reverse(declaredType);
-					
+
 					// next perform a reachability analysis (RA) withing the set of subtypes
 					Q reachableMethods = Common.toQ(ReachabilityAnalysis.getReachableMethods(callsite, declaredSubtypeHierarchy));
 					resolvedDispatches = resolvedDispatches.union(reachableMethods);
-
+					
 					// if a method is abstract, then its children must override it, so we can just remove all abstract
 					// methods from the graph (this might come into play if nearest matching method definition was abstract)
 					// note: its possible for a method to be re-abstracted by a subtype after its been made concrete

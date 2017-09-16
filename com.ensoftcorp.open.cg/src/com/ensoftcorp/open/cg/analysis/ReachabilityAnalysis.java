@@ -68,7 +68,7 @@ public class ReachabilityAnalysis extends CGAnalysis {
 			for(Node callsite : callsites){
 				if(callsite.taggedWith(XCSG.StaticDispatchCallSite)){
 					// static dispatches (calls to constructors or methods marked as static) can be resolved immediately
-					Node targetMethod = invokedFunctionEdges.successors(Common.toQ(callsite)).eval().nodes().getFirst();
+					Node targetMethod = invokedFunctionEdges.successors(Common.toQ(callsite)).eval().nodes().one();
 					CallGraphConstruction.createCallEdge(callsite, method, targetMethod, CALL, PER_CONTROL_FLOW);
 				} else if(callsite.taggedWith(XCSG.DynamicDispatchCallSite)){
 					// dynamic dispatches require additional analysis to be resolved
@@ -105,16 +105,19 @@ public class ReachabilityAnalysis extends CGAnalysis {
 	 */
 	public static AtlasSet<Node> getReachableMethods(Node callsite, Q typesToSearch){
 		Q methodSignatureEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedSignature);
-		Node methodSignature = methodSignatureEdges.successors(Common.toQ(callsite)).eval().nodes().getFirst();
-		String signature = methodSignature.getAttr(JavaStopGap.SIGNATURE).toString();
-		
-		Q matchingMethods = Common.universe().selectNode(JavaStopGap.SIGNATURE, signature);
-		
-		Q containsEdges = Common.universe().edgesTaggedWithAny(XCSG.Contains);
-		Q candidateMethods = containsEdges.forwardStep(typesToSearch).nodesTaggedWithAny(XCSG.Method)
-				.difference(Common.universe().nodesTaggedWithAny(XCSG.Constructor, Attr.Node.IS_STATIC));
-		
-		return new AtlasHashSet<Node>(matchingMethods.intersection(candidateMethods).eval().nodes());
+		Node methodSignature = methodSignatureEdges.successors(Common.toQ(callsite)).eval().nodes().one();
+		String signature = (String) methodSignature.getAttr(JavaStopGap.SIGNATURE);
+		if(signature == null){
+			return new AtlasHashSet<Node>();
+		} else {
+			Q matchingMethods = Common.universe().selectNode(JavaStopGap.SIGNATURE, signature);
+			
+			Q containsEdges = Common.universe().edgesTaggedWithAny(XCSG.Contains);
+			Q candidateMethods = containsEdges.forwardStep(typesToSearch).nodesTaggedWithAny(XCSG.Method)
+					.difference(Common.universe().nodesTaggedWithAny(XCSG.Constructor, Attr.Node.IS_STATIC));
+			
+			return new AtlasHashSet<Node>(matchingMethods.intersection(candidateMethods).eval().nodes());
+		}
 	}
 	
 	/**
@@ -157,7 +160,7 @@ public class ReachabilityAnalysis extends CGAnalysis {
 		AtlasSet<Node> result = new AtlasHashSet<Node>();
 		
 		// at least the method signature is reachable
-		result.add(methodSignature.eval().nodes().getFirst()); 
+		result.add(methodSignature.eval().nodes().one()); 
 		
 		// filter out methods that do not take the exact same number and type of parameters
 		for(Node matchingMethod : matchingMethods.eval().nodes()){
@@ -167,8 +170,8 @@ public class ReachabilityAnalysis extends CGAnalysis {
 				// check that each parameter passed type is compatible with the expected parameter type
 				boolean paramsMatch = true;
 				for(int i=0; i<passedParameters.size(); i++){
-					Node passedParameter = Common.toQ(passedParameters).selectNode(XCSG.parameterIndex, i).eval().nodes().getFirst();
-					Node candidateMethodParameter = Common.toQ(candidateMethodParameters).selectNode(XCSG.parameterIndex, i).eval().nodes().getFirst();
+					Node passedParameter = Common.toQ(passedParameters).selectNode(XCSG.parameterIndex, i).eval().nodes().one();
+					Node candidateMethodParameter = Common.toQ(candidateMethodParameters).selectNode(XCSG.parameterIndex, i).eval().nodes().one();
 					Q passedParameterType = typeOfEdges.successors(Common.toQ(passedParameter));
 					Q methodParameterType = typeOfEdges.successors(Common.toQ(candidateMethodParameter));
 					// passed parameter types can be subtypes of the parameter's declared types
