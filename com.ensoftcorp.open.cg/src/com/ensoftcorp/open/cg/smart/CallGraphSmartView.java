@@ -7,10 +7,13 @@ import com.ensoftcorp.atlas.core.script.FrontierStyledResult;
 import com.ensoftcorp.atlas.core.script.StyledResult;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.atlas.ui.scripts.selections.FilteringAtlasSmartViewScript;
+import com.ensoftcorp.atlas.ui.scripts.selections.IExplorableScript;
 import com.ensoftcorp.atlas.ui.scripts.selections.IResizableScript;
+import com.ensoftcorp.atlas.ui.scripts.util.SimpleScriptUtil;
+import com.ensoftcorp.atlas.ui.selection.event.FrontierEdgeExploreEvent;
 import com.ensoftcorp.atlas.ui.selection.event.IAtlasSelectionEvent;
 
-public abstract class CallGraphSmartView extends FilteringAtlasSmartViewScript implements IResizableScript {
+public abstract class CallGraphSmartView extends FilteringAtlasSmartViewScript implements IResizableScript, IExplorableScript {
 
 	/**
 	 * Returns a call graph for the given analysis
@@ -26,6 +29,11 @@ public abstract class CallGraphSmartView extends FilteringAtlasSmartViewScript i
 	@Override
 	protected String[] getSupportedEdgeTags() {
 		return NOTHING;
+	}
+	
+	@Override
+	public FrontierStyledResult explore(FrontierEdgeExploreEvent event, FrontierStyledResult oldResult) {
+		return SimpleScriptUtil.explore(this, event, oldResult);
 	}
 
 	@Override
