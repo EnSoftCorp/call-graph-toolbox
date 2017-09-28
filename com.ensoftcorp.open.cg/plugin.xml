@@ -30,31 +30,31 @@
    <extension
          point="com.ensoftcorp.atlas.ui.smartViewScript">
       <script
-            class="com.ensoftcorp.open.cg.smart.RACallGraphSmartView">
+            class="com.ensoftcorp.open.cg.ui.smart.RACallGraphSmartView">
       </script>
       <script
-            class="com.ensoftcorp.open.cg.smart.CHACallGraphSmartView">
+            class="com.ensoftcorp.open.cg.ui.smart.CHACallGraphSmartView">
       </script>
       <script
-            class="com.ensoftcorp.open.cg.smart.RTACallGraphSmartView">
+            class="com.ensoftcorp.open.cg.ui.smart.RTACallGraphSmartView">
       </script>
       <script
-            class="com.ensoftcorp.open.cg.smart.MTACallGraphSmartView">
+            class="com.ensoftcorp.open.cg.ui.smart.MTACallGraphSmartView">
       </script>
       <script
-            class="com.ensoftcorp.open.cg.smart.FTACallGraphSmartView">
+            class="com.ensoftcorp.open.cg.ui.smart.FTACallGraphSmartView">
       </script>
       <script
-            class="com.ensoftcorp.open.cg.smart.ETACallGraphSmartView">
+            class="com.ensoftcorp.open.cg.ui.smart.ETACallGraphSmartView">
       </script>
       <script
-            class="com.ensoftcorp.open.cg.smart.XTACallGraphSmartView">
+            class="com.ensoftcorp.open.cg.ui.smart.XTACallGraphSmartView">
       </script>
       <script
-            class="com.ensoftcorp.open.cg.smart.ClassicXTACallGraphSmartView">
+            class="com.ensoftcorp.open.cg.ui.smart.ClassicXTACallGraphSmartView">
       </script>
       <script
-            class="com.ensoftcorp.open.cg.smart.ZeroCFACallGraphSmartView">
+            class="com.ensoftcorp.open.cg.ui.smart.ZeroCFACallGraphSmartView">
       </script>
    </extension>
 

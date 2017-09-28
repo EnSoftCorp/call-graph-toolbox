@@ -1,4 +1,4 @@
-package com.ensoftcorp.open.cg.smart;
+package com.ensoftcorp.open.cg.ui.smart;
 
 import com.ensoftcorp.atlas.core.highlight.Highlighter;
 import com.ensoftcorp.atlas.core.markup.MarkupFromH;
