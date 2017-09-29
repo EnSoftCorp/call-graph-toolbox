@@ -64,27 +64,27 @@ public class CallGraphPreferencesPage extends FieldEditorPreferencePage implemen
 //					if (event.getProperty() == CallGraphPreferences.INFER_LIBRARY_CALLBACK_ENTRY_POINTS 
 //					 || event.getProperty() == CallGraphPreferences.REACHABILITY_RESTRICTIONS
 //					 || event.getProperty() == CallGraphPreferences.LIBRARY_CALL_GRAPH_CONSTRUCTION) {
-						Display.getDefault().asyncExec(new Runnable(){
-							@Override
-							public void run() {
-								boolean result = DisplayUtils.promptBoolean("Preference Change", 
-										"Changing call graph preferences requires rebuilding the Atlas code map. Would you like to re-map the workspace now?");
-								if(result){
-									Job job = new Job("Re-map Workspace") {
-										@Override
-									    protected IStatus run(IProgressMonitor monitor) {
-											try {
-												MappingUtils.indexWorkspace();
-											} catch (Throwable e) {
-												Log.error("Mapping workspace failed.", e);
-											}
-											return Status.OK_STATUS;
-										}
-									};
-									job.schedule();
-								}
-							}
-						});
+//						Display.getDefault().asyncExec(new Runnable(){
+//							@Override
+//							public void run() {
+//								boolean result = DisplayUtils.promptBoolean("Preference Change", 
+//										"Changing call graph preferences requires rebuilding the Atlas code map. Would you like to re-map the workspace now?");
+//								if(result){
+//									Job job = new Job("Re-map Workspace") {
+//										@Override
+//									    protected IStatus run(IProgressMonitor monitor) {
+//											try {
+//												MappingUtils.indexWorkspace();
+//											} catch (Throwable e) {
+//												Log.error("Mapping workspace failed.", e);
+//											}
+//											return Status.OK_STATUS;
+//										}
+//									};
+//									job.schedule();
+//								}
+//							}
+//						});
 //					}
 				}
 			});
