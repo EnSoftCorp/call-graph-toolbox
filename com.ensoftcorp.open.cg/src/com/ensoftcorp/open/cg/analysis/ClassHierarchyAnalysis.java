@@ -6,11 +6,13 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.objectweb.asm.tree.ClassNode;
 
+import com.ensoftcorp.atlas.core.db.graph.Edge;
 import com.ensoftcorp.atlas.core.db.graph.Graph;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.NodeDirection;
 import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
+import com.ensoftcorp.atlas.core.index.common.SourceCorrespondence;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.core.script.Common;
@@ -22,6 +24,7 @@ import com.ensoftcorp.open.cg.summary.JarInspector;
 import com.ensoftcorp.open.cg.summary.MethodSummary;
 import com.ensoftcorp.open.cg.utils.CallGraphConstruction;
 import com.ensoftcorp.open.commons.utilities.CodeMapChangeListener;
+import com.ensoftcorp.open.commons.utilities.WorkspaceUtils;
 import com.ensoftcorp.open.java.commons.analysis.CommonQueries;
 
 /**
@@ -74,54 +77,46 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 	
 	@Override
 	protected void runAnalysis() {
-		// add callsite summaries for each library method
-		for(Node library : Common.universe().nodes(XCSG.Library).eval().nodes()){
-			try {
-				// TODO: how SHOULD I be getting the path to the library???
-				String id = library.getAttr(XCSG.id).toString();
-				id = id.substring(1, id.length()-1);
-				String[] idParts = id.split("#");
-				File libraryFile = null; 
-				String libraryPath = idParts[0];
-				libraryFile = new File(libraryPath);
-				if(!libraryFile.exists()){
-					for(Node projectNode : Common.universe().nodes(XCSG.Project).eval().nodes()){
-						IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectNode.getAttr(XCSG.name).toString());
-						libraryFile = new File(libraryPath.replace("C:\\", project.getLocation().toFile().getParentFile().getCanonicalPath() + File.separator));
-						if(libraryFile.exists()){
-							break;
-						}
+		
+		if(CallGraphPreferences.isLibraryCallGraphConstructionEnabled()){
+			// add callsite summaries for each library method
+			for(Node library : Common.universe().nodes(XCSG.Library).eval().nodes()){
+				Log.info("Generating call graph for: " + library.getAttr(XCSG.name));
+				try {
+					File libraryFile = null;
+					SourceCorrespondence sc = (SourceCorrespondence) library.getAttr(XCSG.sourceCorrespondence);
+					if(sc != null){
+						libraryFile = WorkspaceUtils.getFile(sc.sourceFile);
 					}
-				}
-				if(libraryFile == null || !libraryFile.exists()){
-					throw new RuntimeException("Could not locate library file for " + library.getAttr(XCSG.name).toString());
-				} else {
-					libraryPath = libraryFile.getCanonicalPath();
-				}
-				
-//				if(libraryFile.getName().endsWith("rt.jar")){
-//					continue; // TODO: remove after debugging
-//				}
-				
-				// get the entry for each type in the library
-				JarInspector jarInspector = new JarInspector(libraryFile);
-				for(Node type : Common.toQ(library).contained().nodes(XCSG.Java.AbstractClass, XCSG.Java.Class).eval().nodes()){
-					Node pkg = Common.toQ(type).parent().nodes(XCSG.Package).eval().nodes().one();
-					if(pkg != null){
-						String entry = pkg.getAttr(XCSG.name).toString().replace(".", "/") + "/" + type.getAttr(XCSG.name).toString() + ".class";
-						byte[] classBytes = jarInspector.extractEntry(entry);
-						if(classBytes != null){
-							ClassNode classNode = BytecodeUtils.getClassNode(jarInspector.extractEntry(entry));
-							MethodSummary.summarizeCallsites(classNode, type);
+					
+					if(libraryFile == null || !libraryFile.exists()){
+						throw new RuntimeException("Could not locate library file for " + library.getAttr(XCSG.name).toString());
+					}
+					
+//					if(libraryFile.getName().endsWith("rt.jar")){
+//						continue; // TODO: remove after debugging
+//					}
+					
+					// get the entry for each type in the library
+					JarInspector jarInspector = new JarInspector(libraryFile);
+					for(Node type : Common.toQ(library).contained().nodes(XCSG.Java.AbstractClass, XCSG.Java.Class).eval().nodes()){
+						Node pkg = Common.toQ(type).parent().nodes(XCSG.Package).eval().nodes().one();
+						if(pkg != null){
+							String entry = pkg.getAttr(XCSG.name).toString().replace(".", "/") + "/" + type.getAttr(XCSG.name).toString() + ".class";
+							byte[] classBytes = jarInspector.extractEntry(entry);
+							if(classBytes != null){
+								ClassNode classNode = BytecodeUtils.getClassNode(jarInspector.extractEntry(entry));
+								MethodSummary.summarizeCallsites(classNode, type);
+							} else {
+								Log.warning("Could not locate " + entry);
+							}
 						} else {
-							Log.warning("Could not locate " + entry);
+							Log.warning("Type " + type.getAttr(XCSG.name)+ " has no package.");
 						}
-					} else {
-						Log.warning("Type " + type.getAttr(XCSG.name)+ " has no package.");
 					}
+				} catch (Exception e){
+					Log.warning("Could not summarize callsites in library: " + library.getAttr(XCSG.name) + "\n" + library.toString(), e);
 				}
-			} catch (Exception e){
-				Log.warning("Could not summarize callsites in library: " + library.getAttr(XCSG.name) + "\n" + library.toString(), e);
 			}
 		}
 		
@@ -155,7 +150,8 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 					// the nearest method definition is the method definition closest to the declared type (including
 					// the declared type itself) while traversing from declared type to Object on the descendant path
 					// but an easier way to get this is to use Atlas' InvokedSignature edge to get the nearest method definition
-					Node methodSignature = methodSignatureGraph.edges(callsite, NodeDirection.OUT).one().getNode(EdgeDirection.TO);
+					Edge methodSignatureEdge = methodSignatureGraph.edges(callsite, NodeDirection.OUT).one();
+					Node methodSignature = methodSignatureEdge.getNode(EdgeDirection.TO);
 					Q resolvedDispatches = Common.toQ(methodSignature);
 					
 					// subtypes of the declared type can override the nearest target method definition, 

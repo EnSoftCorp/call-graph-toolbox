@@ -183,7 +183,12 @@ public class MethodSummary {
 					}
 				}
 			} else {
-				Log.warning("Unable to locate corresponding Atlas method for " + methodNode.name);
+				if(methodNode.name.equals("<init>") || methodNode.name.equals("<clinit>")){
+					// Atlas does not stub out the class initializers, so don't need to log this for every class
+					// TODO: we should really be creating the missing atlas class initializers...
+				} else {
+					Log.warning("Unable to locate corresponding Atlas method for " + methodNode.name);
+				}
 			}
     	}
     }
