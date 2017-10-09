@@ -2,8 +2,6 @@ package com.ensoftcorp.open.cg.analysis;
 
 import java.io.File;
 
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.objectweb.asm.tree.ClassNode;
 
 import com.ensoftcorp.atlas.core.db.graph.Edge;

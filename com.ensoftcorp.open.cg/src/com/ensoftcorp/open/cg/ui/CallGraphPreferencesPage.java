@@ -1,24 +1,16 @@
 package com.ensoftcorp.open.cg.ui;
 
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.util.IPropertyChangeListener;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
 import com.ensoftcorp.open.cg.Activator;
-import com.ensoftcorp.open.cg.log.Log;
 import com.ensoftcorp.open.cg.preferences.CallGraphPreferences;
 import com.ensoftcorp.open.commons.ui.components.LabelFieldEditor;
 import com.ensoftcorp.open.commons.ui.components.SpacerFieldEditor;
-import com.ensoftcorp.open.commons.utilities.DisplayUtils;
-import com.ensoftcorp.open.commons.utilities.MappingUtils;
 
 /**
  * UI for setting call graph construction preferences
