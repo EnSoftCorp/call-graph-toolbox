@@ -17,13 +17,13 @@ import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.log.Log;
 import com.ensoftcorp.open.cg.preferences.CallGraphPreferences;
-import com.ensoftcorp.open.cg.summary.BytecodeUtils;
-import com.ensoftcorp.open.cg.summary.JarInspector;
 import com.ensoftcorp.open.cg.summary.MethodSummary;
 import com.ensoftcorp.open.cg.utils.CallGraphConstruction;
 import com.ensoftcorp.open.commons.utilities.CodeMapChangeListener;
 import com.ensoftcorp.open.commons.utilities.WorkspaceUtils;
 import com.ensoftcorp.open.java.commons.analysis.CommonQueries;
+import com.ensoftcorp.open.java.commons.bytecode.BytecodeUtils;
+import com.ensoftcorp.open.java.commons.bytecode.JarInspector;
 
 /**
  * This analysis builds a call graph using Class Hierarchy Analysis (CHA).
