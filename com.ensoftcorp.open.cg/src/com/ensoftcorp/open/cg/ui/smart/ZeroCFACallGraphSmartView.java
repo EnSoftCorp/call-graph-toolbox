@@ -1,6 +1,6 @@
 package com.ensoftcorp.open.cg.ui.smart;
 
-import com.ensoftcorp.atlas.core.log.Log;
+import com.ensoftcorp.open.cg.log.Log;
 import com.ensoftcorp.atlas.core.query.Q;
 import com.ensoftcorp.atlas.java.core.script.Common;
 import com.ensoftcorp.open.cg.analysis.CGAnalysis;

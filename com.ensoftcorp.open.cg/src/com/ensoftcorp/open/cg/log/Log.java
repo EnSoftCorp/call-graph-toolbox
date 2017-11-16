@@ -35,6 +35,14 @@ public class Log {
 		log(Status.WARNING, message, e);
 	}
 	
+	public static void debug(String message) {
+		debug(message, null);
+	}
+	
+	public static void debug(String message, Throwable e) {
+		log(Status.INFO, ("DEBUG: " + message), e);
+	}
+	
 	public static void info(String message) {
 		info(message, null);
 	}
