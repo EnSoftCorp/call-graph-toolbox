@@ -11,6 +11,33 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 	private static boolean initialized = false;
 	
 	/**
+	 * Enable/disable debug logging
+	 */
+	public static final String DEBUG_LOGGING = "DEBUG_LOGGING";
+	public static final Boolean DEBUG_LOGGING_DEFAULT = false;
+	private static boolean debugLoggingValue = DEBUG_LOGGING_DEFAULT;
+	
+	/**
+	 * Configures debug logging
+	 */
+	public static void enableDebugLogging(boolean enabled){
+		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
+		preferences.setValue(DEBUG_LOGGING, enabled);
+		loadPreferences();
+	}
+	
+	/**
+	 * Returns true if loop cataloging is enabled
+	 * @return
+	 */
+	public static boolean isDebugLoggingEnabled(){
+		if(!initialized){
+			loadPreferences();
+		}
+		return debugLoggingValue;
+	}
+	
+	/**
 	 * Enable/disable RA
 	 */
 	public static final String RA_ALGORITHM = "RA_ALGORITHM";
@@ -318,6 +345,7 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 		preferences.setDefault(ZEROCFA_ALGORITHM, ZEROCFA_ALGORITHM_DEFAULT);
 		
 		preferences.setDefault(GENERAL_LOGGING, GENERAL_LOGGING_DEFAULT);
+		preferences.setDefault(DEBUG_LOGGING, DEBUG_LOGGING_DEFAULT);
 		preferences.setDefault(INFER_LIBRARY_CALLBACK_ENTRY_POINTS, INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DEFAULT);
 		preferences.setDefault(LIBRARY_CALL_GRAPH_CONSTRUCTION, LIBRARY_CALL_GRAPH_CONSTRUCTION_DEFAULT);
 		preferences.setDefault(REACHABILITY_RESTRICTIONS, REACHABILITY_RESTRICTIONS_DEFAULT);
@@ -340,6 +368,7 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 		preferences.setValue(ZEROCFA_ALGORITHM, ZEROCFA_ALGORITHM_DEFAULT);
 		
 		preferences.setValue(GENERAL_LOGGING, GENERAL_LOGGING_DEFAULT);
+		preferences.setValue(DEBUG_LOGGING, DEBUG_LOGGING_DEFAULT);
 		preferences.setValue(INFER_LIBRARY_CALLBACK_ENTRY_POINTS, INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DEFAULT);
 		preferences.setValue(LIBRARY_CALL_GRAPH_CONSTRUCTION, LIBRARY_CALL_GRAPH_CONSTRUCTION_DEFAULT);
 		preferences.setValue(REACHABILITY_RESTRICTIONS, REACHABILITY_RESTRICTIONS_DEFAULT);
@@ -364,6 +393,7 @@ public class CallGraphPreferences extends AbstractPreferenceInitializer {
 			zerocfaAlgorithmValue = preferences.getBoolean(ZEROCFA_ALGORITHM);
 			
 			generalLoggingAlgorithmValue = preferences.getBoolean(GENERAL_LOGGING);
+			debugLoggingValue = preferences.getBoolean(DEBUG_LOGGING);
 			inferLibraryCallbackEntryPointsValue = preferences.getBoolean(INFER_LIBRARY_CALLBACK_ENTRY_POINTS);
 			libraryCallGraphConstructionAlgorithmValue = preferences.getBoolean(LIBRARY_CALL_GRAPH_CONSTRUCTION);
 			reachabilityRestrictionsValue = preferences.getBoolean(REACHABILITY_RESTRICTIONS);

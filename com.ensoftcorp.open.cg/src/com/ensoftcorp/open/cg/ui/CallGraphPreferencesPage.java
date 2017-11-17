@@ -30,6 +30,7 @@ public class CallGraphPreferencesPage extends FieldEditorPreferencePage implemen
 	private static final String ZEROCFA_ALGORITHM_DESCRIPTION = "0-CFA Analysis";
 	
 	private static final String GENERAL_LOGGING_DESCRIPTION = "General logging";
+	private static final String DEBUG_LOGGING_DESCRIPTION = "Debug logging";
 	private static final String INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DESCRIPTION = "Infers entry points that may result from library callbacks";
 	private static final String REACHABILITY_RESTRICTIONS_DESCRIPTION = "Enforce reachability restrictions";
 	private static final String LIBRARY_CALL_GRAPH_CONSTRUCTION_DESCRIPTION = "Library call graph construction (beta)";
@@ -100,6 +101,7 @@ public class CallGraphPreferencesPage extends FieldEditorPreferencePage implemen
 		addField(new SpacerFieldEditor(getFieldEditorParent()));
 		addField(new LabelFieldEditor("Advanced Options", getFieldEditorParent()));
 		addField(new BooleanFieldEditor(CallGraphPreferences.GENERAL_LOGGING, "&" + GENERAL_LOGGING_DESCRIPTION, getFieldEditorParent()));
+		addField(new BooleanFieldEditor(CallGraphPreferences.DEBUG_LOGGING, "&" + DEBUG_LOGGING_DESCRIPTION, getFieldEditorParent()));
 		addField(new BooleanFieldEditor(CallGraphPreferences.INFER_LIBRARY_CALLBACK_ENTRY_POINTS, "&" + INFER_LIBRARY_CALLBACK_ENTRY_POINTS_DESCRIPTION, getFieldEditorParent()));
 		addField(new BooleanFieldEditor(CallGraphPreferences.REACHABILITY_RESTRICTIONS, "&" + REACHABILITY_RESTRICTIONS_DESCRIPTION, getFieldEditorParent()));
 		addField(new BooleanFieldEditor(CallGraphPreferences.LIBRARY_CALL_GRAPH_CONSTRUCTION, "&" + LIBRARY_CALL_GRAPH_CONSTRUCTION_DESCRIPTION, getFieldEditorParent()));

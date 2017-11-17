@@ -8,6 +8,7 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
 import com.ensoftcorp.open.cg.Activator;
+import com.ensoftcorp.open.cg.preferences.CallGraphPreferences;
 
 /**
  * Centralized logging for Eclipse plugins.
@@ -40,7 +41,9 @@ public class Log {
 	}
 	
 	public static void debug(String message, Throwable e) {
-		log(Status.INFO, ("DEBUG: " + message), e);
+		if(CallGraphPreferences.isDebugLoggingEnabled()){
+			log(Status.INFO, ("DEBUG: " + message), e);
+		}
 	}
 	
 	public static void info(String message) {
