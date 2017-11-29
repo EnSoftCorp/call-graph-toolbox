@@ -5,7 +5,8 @@
     <property name='p2.timestamp' value='1483488000'/>
     <property name='p2.compressed' value='false'/>
   </properties>
-  <children size='1'>
-    <child location='3.1.6'/>
+  <children size='2'>
+    <child location='3.3.0'/>
+	<child location='3.1.6'/>
   </children>
 </repository>
