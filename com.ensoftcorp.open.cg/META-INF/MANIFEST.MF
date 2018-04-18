@@ -10,10 +10,13 @@ Require-Bundle:
  com.ensoftcorp.open.commons;bundle-version="3.3.0";visibility:=reexport,
  com.ensoftcorp.open.pointsto;bundle-version="3.3.0";visibility:=reexport,
  com.ensoftcorp.atlas.core;bundle-version="3.3.0",
- com.ensoftcorp.open.java.commons;bundle-version="3.3.0"
+ com.ensoftcorp.open.java.commons;bundle-version="3.3.0",
+ org.objectweb.asm.commons;bundle-version="6.0.0",
+ org.objectweb.asm.tree;bundle-version="6.0.0"
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .
 Bundle-Activator: com.ensoftcorp.open.cg.Activator
 Export-Package: com.ensoftcorp.open.cg.analysis;uses:="com.ensoftcorp.atlas.core.query",
  com.ensoftcorp.open.cg.common,
  com.ensoftcorp.open.cg.preferences
+Automatic-Module-Name: com.ensoftcorp.open.cg
