@@ -9,6 +9,7 @@ import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Q;
+import com.ensoftcorp.atlas.core.query.Query;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.log.Log;
@@ -68,10 +69,10 @@ public class ClassicHybridTypeAnalysis extends CGAnalysis {
 		Q cgCHA = cha.getCallGraph();
 		
 		// next create some subgraphs to work with
-		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
-		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
-		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
-		Q dataFlowEdges = Common.universe().edgesTaggedWithAny(XCSG.DataFlow_Edge);
+		Q typeHierarchy = Query.universe().edges(XCSG.Supertype);
+		Q typeOfEdges = Query.universe().edges(XCSG.TypeOf);
+		Q declarations = Query.universe().edges(XCSG.Contains);
+		Q dataFlowEdges = Query.universe().edges(XCSG.DataFlow_Edge);
 		
 		// create a worklist and add the root method set
 		LinkedList<Node> worklist = new LinkedList<Node>();
@@ -117,7 +118,7 @@ public class ClassicHybridTypeAnalysis extends CGAnalysis {
 				if(allocationTypes.isEmpty()){
 					// allocations are contained (declared) within the methods in the method reverse call graph
 					Q methodDeclarations = declarations.forward(Common.toQ(method));
-					Q allocations = methodDeclarations.nodesTaggedWithAny(XCSG.Instantiation);
+					Q allocations = methodDeclarations.nodes(XCSG.Instantiation);
 					// collect the types of each allocation
 					allocationTypes.addAll(typeOfEdges.successors(allocations).eval().nodes());
 					allocationTypes.addAll(allocationTypes);
@@ -149,7 +150,7 @@ public class ClassicHybridTypeAnalysis extends CGAnalysis {
 					// In FTA any method in the method or method's parents that reads from a field 
 					// can have a reference to the allocations that occur in any another method that writes to that field
 					Q reachableMethodDeclarations = declarations.forward(Common.toQ(method).union(Common.toQ(parentMethods)));
-					AtlasSet<Node> readFields = dataFlowEdges.predecessors(reachableMethodDeclarations).nodesTaggedWithAny(XCSG.Field).eval().nodes();
+					AtlasSet<Node> readFields = dataFlowEdges.predecessors(reachableMethodDeclarations).nodes(XCSG.Field).eval().nodes();
 					for(Node readField : readFields){
 						AtlasSet<Node> fieldAllocationTypes = getAllocationTypesSet(readField);
 						allocationTypes.addAll(fieldAllocationTypes);
@@ -157,7 +158,7 @@ public class ClassicHybridTypeAnalysis extends CGAnalysis {
 					
 					// In FTA if the method writes to a field then all the compatible allocated types available to the method
 					// can be propagated to the field
-					AtlasSet<Node> writtenFields = dataFlowEdges.successors(reachableMethodDeclarations).nodesTaggedWithAny(XCSG.Field).eval().nodes();
+					AtlasSet<Node> writtenFields = dataFlowEdges.successors(reachableMethodDeclarations).nodes(XCSG.Field).eval().nodes();
 					for(Node writtenField : writtenFields){
 						AtlasSet<Node> fieldAllocationTypes = getAllocationTypesSet(writtenField);
 						Q compatibleTypes = Common.toQ(allocationTypes).intersection(typeHierarchy.reverse(typeOfEdges.successors(Common.toQ(writtenField))));
@@ -178,7 +179,7 @@ public class ClassicHybridTypeAnalysis extends CGAnalysis {
 					// includes called methods marked static and constructors
 					Node calledMethod = callEdge.getNode(EdgeDirection.TO);
 					Node callingMethod = callEdge.getNode(EdgeDirection.FROM);
-					Q callingStaticDispatches = Common.toQ(callingMethod).contained().nodesTaggedWithAny(XCSG.StaticDispatchCallSite);
+					Q callingStaticDispatches = Common.toQ(callingMethod).contained().nodes(XCSG.StaticDispatchCallSite);
 					boolean isStaticDispatch = !cha.getPerControlFlowGraph().predecessors(Common.toQ(calledMethod)).intersection(callingStaticDispatches).eval().nodes().isEmpty();
 					if(isStaticDispatch || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
 						FieldTypeAnalysis.updateCallGraph(worklist, cgXTA, method, allocationTypes, callEdge, calledMethod);
@@ -218,7 +219,7 @@ public class ClassicHybridTypeAnalysis extends CGAnalysis {
 			xtaEdge.tag(CALL);
 			Node callingMethod = xtaEdge.getNode(EdgeDirection.FROM);
 			Node calledMethod = xtaEdge.getNode(EdgeDirection.TO);
-			Q callsites = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.CallSite);
+			Q callsites = declarations.forward(Common.toQ(callingMethod)).nodes(XCSG.CallSite);
 			for(Edge perControlFlowEdge : pcfCHA.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
 				perControlFlowEdge.tag(PER_CONTROL_FLOW);
 			}

@@ -6,6 +6,7 @@ import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Attr;
 import com.ensoftcorp.atlas.core.query.Q;
+import com.ensoftcorp.atlas.core.query.Query;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.script.CommonQueries;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
@@ -56,15 +57,15 @@ public class ReachabilityAnalysis extends CGAnalysis {
 	
 	@Override
 	protected void runAnalysis() {
-		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
-		Q invokedFunctionEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedFunction);
-		Q allTypes = Common.universe().nodesTaggedWithAny(XCSG.Type);
+		Q declarations = Query.universe().edges(XCSG.Contains);
+		Q invokedFunctionEdges = Query.universe().edges(XCSG.InvokedFunction);
+		Q allTypes = Query.universe().nodes(XCSG.Type);
 		
 		// for each method
-		AtlasSet<Node> methods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
+		AtlasSet<Node> methods = Query.universe().nodes(XCSG.Method).eval().nodes();
 		for(Node method : methods){
 			// for each callsite
-			AtlasSet<Node> callsites = declarations.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
+			AtlasSet<Node> callsites = declarations.forward(Common.toQ(method)).nodes(XCSG.CallSite).eval().nodes();
 			for(Node callsite : callsites){
 				if(callsite.taggedWith(XCSG.StaticDispatchCallSite)){
 					// static dispatches (calls to constructors or methods marked as static) can be resolved immediately
@@ -104,17 +105,17 @@ public class ReachabilityAnalysis extends CGAnalysis {
 	 * @return
 	 */
 	public static AtlasSet<Node> getReachableMethods(Node callsite, Q typesToSearch){
-		Q methodSignatureEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedSignature);
+		Q methodSignatureEdges = Query.universe().edges(XCSG.InvokedSignature);
 		Node methodSignature = methodSignatureEdges.successors(Common.toQ(callsite)).eval().nodes().one();
 		String signature = (String) methodSignature.getAttr(JavaStopGap.SIGNATURE);
 		if(signature == null){
 			return new AtlasHashSet<Node>();
 		} else {
-			Q matchingMethods = Common.universe().selectNode(JavaStopGap.SIGNATURE, signature);
+			Q matchingMethods = Query.universe().selectNode(JavaStopGap.SIGNATURE, signature);
 			
-			Q containsEdges = Common.universe().edgesTaggedWithAny(XCSG.Contains);
-			Q candidateMethods = containsEdges.forwardStep(typesToSearch).nodesTaggedWithAny(XCSG.Method)
-					.difference(Common.universe().nodesTaggedWithAny(XCSG.Constructor, Attr.Node.IS_STATIC));
+			Q containsEdges = Query.universe().edges(XCSG.Contains);
+			Q candidateMethods = containsEdges.forwardStep(typesToSearch).nodes(XCSG.Method)
+					.difference(Query.universe().nodes(XCSG.Constructor, Attr.Node.IS_STATIC));
 			
 			return new AtlasHashSet<Node>(matchingMethods.intersection(candidateMethods).eval().nodes());
 		}
@@ -132,17 +133,17 @@ public class ReachabilityAnalysis extends CGAnalysis {
 	 * @return
 	 */
 	public static AtlasSet<Node> getReachableMethods_AlternateImplementation(Node callsite, Q typesToSearch){
-		Q containsEdges = Common.universe().edgesTaggedWithAny(XCSG.Contains);
-		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
-		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
-		Q returnsEdges = Common.universe().edgesTaggedWithAny(XCSG.Returns);
-		Q methodSignatureEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedSignature);
-		Q parameterPassToEdges = Common.universe().edgesTaggedWithAny(XCSG.ParameterPassedTo);
+		Q containsEdges = Query.universe().edges(XCSG.Contains);
+		Q typeOfEdges = Query.universe().edges(XCSG.TypeOf);
+		Q typeHierarchy = Query.universe().edges(XCSG.Supertype);
+		Q returnsEdges = Query.universe().edges(XCSG.Returns);
+		Q methodSignatureEdges = Query.universe().edges(XCSG.InvokedSignature);
+		Q parameterPassToEdges = Query.universe().edges(XCSG.ParameterPassedTo);
 		
 		// first create a set of candidate methods to select from
 		// note: specifically including abstract methods so we can use them later for library construction
-		Q candidateMethods = containsEdges.forwardStep(typesToSearch).nodesTaggedWithAny(XCSG.Method)
-				.difference(Common.universe().nodesTaggedWithAny(XCSG.Constructor, Attr.Node.IS_STATIC));
+		Q candidateMethods = containsEdges.forwardStep(typesToSearch).nodes(XCSG.Method)
+				.difference(Query.universe().nodes(XCSG.Constructor, Attr.Node.IS_STATIC));
 		
 		// match the method name
 		String methodName = callsite.getAttr(XCSG.name).toString();

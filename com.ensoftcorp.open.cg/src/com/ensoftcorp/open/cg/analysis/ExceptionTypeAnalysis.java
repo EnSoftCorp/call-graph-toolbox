@@ -9,6 +9,7 @@ import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Q;
+import com.ensoftcorp.atlas.core.query.Query;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.log.Log;
@@ -66,9 +67,9 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 		Q cgCHA = cha.getCallGraph();
 		
 		// next create some subgraphs to work with
-		Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
-		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
-		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
+		Q typeHierarchy = Query.universe().edges(XCSG.Supertype);
+		Q typeOfEdges = Query.universe().edges(XCSG.TypeOf);
+		Q declarations = Query.universe().edges(XCSG.Contains);
 		
 		// create a worklist and add the root method set
 		LinkedList<Node> worklist = new LinkedList<Node>();
@@ -108,7 +109,7 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 			if(allocationTypes.isEmpty()){
 				// allocations are contained (declared) within the methods in the method reverse call graph
 				Q methodDeclarations = declarations.forward(Common.toQ(method));
-				Q allocations = methodDeclarations.nodesTaggedWithAny(XCSG.Instantiation);
+				Q allocations = methodDeclarations.nodes(XCSG.Instantiation);
 				// collect the types of each allocation
 				allocationTypes.addAll(typeOfEdges.successors(allocations).eval().nodes());
 				
@@ -124,8 +125,8 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 			
 			// for ETA we should inherit all allocation types from methods and their parents that 
 			// throw an exception that could be caught by this method
-			Q potentialCatchBlocks = declarations.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
-			Q throwingMethods = declarations.reverse(ThrowableAnalysis.findThrowForCatch(potentialCatchBlocks)).nodesTaggedWithAny(XCSG.Method);
+			Q potentialCatchBlocks = declarations.forward(Common.toQ(method)).nodes(XCSG.ControlFlow_Node);
+			Q throwingMethods = declarations.reverse(ThrowableAnalysis.findThrowForCatch(potentialCatchBlocks)).nodes(XCSG.Method);
 			throwingMethods = throwingMethods.difference(Common.toQ(method)); // only worried about exceptions that propagate back up the stack
 			for(Node throwingMethod : throwingMethods.eval().nodes()){
 				Q throwerAllocationTypes = Common.toQ(getAllocationTypesSet(throwingMethod));
@@ -135,8 +136,8 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 			
 			// finally if this method throws an exception we should propagate those types to all
 			// methods that could potentially catch it
-			Q potentialThrowBlocks = declarations.forward(Common.toQ(method)).nodesTaggedWithAny(XCSG.ControlFlow_Node);
-			Q catchingMethods = declarations.reverse(ThrowableAnalysis.findCatchForThrows(potentialThrowBlocks)).nodesTaggedWithAny(XCSG.Method);
+			Q potentialThrowBlocks = declarations.forward(Common.toQ(method)).nodes(XCSG.ControlFlow_Node);
+			Q catchingMethods = declarations.reverse(ThrowableAnalysis.findCatchForThrows(potentialThrowBlocks)).nodes(XCSG.Method);
 			catchingMethods = catchingMethods.difference(Common.toQ(method)); // only worried about exceptions that propagate back up the stack
 			for(Node catchingMethod : catchingMethods.eval().nodes()){
 				if(getAllocationTypesSet(catchingMethod).addAll(allocationTypes)){
@@ -155,7 +156,7 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 				// includes called methods marked static and constructors
 				Node calledMethod = callEdge.getNode(EdgeDirection.TO);
 				Node callingMethod = callEdge.getNode(EdgeDirection.FROM);
-				Q callingStaticDispatches = Common.toQ(callingMethod).contained().nodesTaggedWithAny(XCSG.StaticDispatchCallSite);
+				Q callingStaticDispatches = Common.toQ(callingMethod).contained().nodes(XCSG.StaticDispatchCallSite);
 				boolean isStaticDispatch = !cha.getPerControlFlowGraph().predecessors(Common.toQ(calledMethod)).intersection(callingStaticDispatches).eval().nodes().isEmpty();
 				if(isStaticDispatch || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
 					updateCallGraph(worklist, cgETA, method, allocationTypes, callEdge, calledMethod);
@@ -180,7 +181,7 @@ public class ExceptionTypeAnalysis extends CGAnalysis {
 			xtaEdge.tag(CALL);
 			Node callingMethod = xtaEdge.getNode(EdgeDirection.FROM);
 			Node calledMethod = xtaEdge.getNode(EdgeDirection.TO);
-			Q callsites = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.CallSite);
+			Q callsites = declarations.forward(Common.toQ(callingMethod)).nodes(XCSG.CallSite);
 			for(Edge perControlFlowEdge : pcfCHA.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
 				perControlFlowEdge.tag(PER_CONTROL_FLOW);
 			}

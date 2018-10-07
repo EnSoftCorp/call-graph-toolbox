@@ -10,6 +10,7 @@ import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Attr;
 import com.ensoftcorp.atlas.core.query.Q;
+import com.ensoftcorp.atlas.core.query.Query;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.log.Log;
@@ -72,7 +73,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		Q pcfCHA = cha.getPerControlFlowGraph();
 		
 		// next create some subgraphs to work with
-		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
+		Q typeOfEdges = Query.universe().edges(XCSG.TypeOf);
 		
 		// locate all the entry point methods
 		Q rootMethods = Common.empty();
@@ -102,7 +103,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		if(CallGraphPreferences.isLibraryCallbackEntryPointsInferenceEnabled()){
 			Q libraryTypes = SetDefinitions.libraries().nodes(XCSG.Type);
 			Q libraryMethods = libraryTypes.children().nodes(XCSG.Method);
-			Q overridesEdges = Common.universe().edges(XCSG.Overrides);
+			Q overridesEdges = Query.universe().edges(XCSG.Overrides);
 			Q appCallbackMethods = overridesEdges.predecessors(libraryMethods).intersection(SetDefinitions.app());
 			rootMethods = rootMethods.union(rootMethods, appCallbackMethods);
 		}
@@ -112,23 +113,23 @@ public class RapidTypeAnalysis extends CGAnalysis {
 		
 		// RTA starts by assuming all new allocations in the program are reachable
 		// which is to say we assume all application methods are entry points
-		Q allocations = SetDefinitions.app().nodesTaggedWithAny(XCSG.Instantiation);
+		Q allocations = SetDefinitions.app().nodes(XCSG.Instantiation);
 		Q allocationTypes = rootMethodParameterTypes.union(typeOfEdges.successors(allocations));
 
 		Q feasibleMethods = allocationTypes.children().nodes(XCSG.Method);
-		Q constructors = Common.universe().nodesTaggedWithAny(XCSG.Constructor);
-		Q methods = Common.universe().nodesTaggedWithAny(XCSG.Method);
+		Q constructors = Query.universe().nodes(XCSG.Constructor);
+		Q methods = Query.universe().nodes(XCSG.Method);
 		Q initializers = methods.methods("<init>");
 		Q staticMethods = methods.nodes(Attr.Node.IS_STATIC);
 		feasibleMethods = feasibleMethods.union(constructors, initializers, staticMethods);
-		Q infeasibleMethods = Common.universe().nodes(XCSG.Method).difference(feasibleMethods);
+		Q infeasibleMethods = Query.universe().nodes(XCSG.Method).difference(feasibleMethods);
 		
 		if(CallGraphPreferences.isReachabilityEnabled()){
-			Q typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
-			Q invokedFunctionEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedFunction);
-			Q identityPassedToEdges = Common.universe().edgesTaggedWithAny(XCSG.IdentityPassedTo);
-			Q dataFlowEdges = Common.universe().edgesTaggedWithAny(XCSG.DataFlow_Edge);
-			Graph methodSignatureGraph = Common.universe().edgesTaggedWithAny(XCSG.InvokedSignature).eval();
+			Q typeHierarchy = Query.universe().edges(XCSG.Supertype);
+			Q invokedFunctionEdges = Query.universe().edges(XCSG.InvokedFunction);
+			Q identityPassedToEdges = Query.universe().edges(XCSG.IdentityPassedTo);
+			Q dataFlowEdges = Query.universe().edges(XCSG.DataFlow_Edge);
+			Graph methodSignatureGraph = Query.universe().edges(XCSG.InvokedSignature).eval();
 			
 			// iteratively build the call graph one method at a time (visiting each method once)
 			// starting from the entry point methods (this adds a restriction of reachability to the
@@ -186,7 +187,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 						// if a method is abstract, then its children must override it, so we can just remove all abstract
 						// methods from the graph (this might come into play if nearest matching method definition was abstract)
 						// note: its possible for a method to be re-abstracted by a subtype after its been made concrete
-						resolvedDispatches = resolvedDispatches.difference(Common.universe().nodes(XCSG.abstractMethod));
+						resolvedDispatches = resolvedDispatches.difference(Query.universe().nodes(XCSG.abstractMethod));
 						
 						// lastly, if the method signature is concrete and the type of the method signature is abstract 
 						// and all subtypes override the method signature then the method signature can never be called
@@ -197,7 +198,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 							boolean abstractMethodSignatureType = methodSignatureType.eval().nodes().one().taggedWith(XCSG.Java.AbstractClass);
 							if(abstractMethodSignatureType){
 								Q resolvedDispatchConcreteSubTypes = resolvedDispatches.difference(Common.toQ(methodSignature)).parent()
-										.difference(Common.universe().nodes(XCSG.Java.AbstractClass));
+										.difference(Query.universe().nodes(XCSG.Java.AbstractClass));
 								if(!resolvedDispatchConcreteSubTypes.eval().nodes().isEmpty()){
 									// there are concrete subtypes
 									if(restrictedTypes.difference(methodSignatureType, resolvedDispatchConcreteSubTypes).eval().nodes().isEmpty()){

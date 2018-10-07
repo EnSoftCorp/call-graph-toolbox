@@ -6,6 +6,7 @@ import com.ensoftcorp.atlas.core.db.graph.GraphElement;
 import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.query.Q;
+import com.ensoftcorp.atlas.core.query.Query;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 
@@ -34,7 +35,7 @@ public class CallGraphConstruction {
 	}
 	
 	private static void createRelationship(GraphElement callsite, GraphElement method, GraphElement targetMethod, String methodRelationship, String callsiteRelationship, String displayName) {
-		Q callEdgesQ = Common.universe().edgesTaggedWithAny(methodRelationship);
+		Q callEdgesQ = Query.universe().edges(methodRelationship);
 		AtlasSet<Edge> callEdges = callEdgesQ.betweenStep(Common.toQ(method), Common.toQ(targetMethod)).eval().edges();
 		if(callEdges.isEmpty()){
 			GraphElement callEdge = Graph.U.createEdge(method, targetMethod);
@@ -42,7 +43,7 @@ public class CallGraphConstruction {
 			callEdge.attr().put(XCSG.name, displayName);
 		}
 		
-		Q perControlFlowEdgesQ = Common.universe().edgesTaggedWithAny(callsiteRelationship);
+		Q perControlFlowEdgesQ = Query.universe().edges(callsiteRelationship);
 		AtlasSet<Edge> perControlFlowEdges = perControlFlowEdgesQ.betweenStep(Common.toQ(callsite), Common.toQ(targetMethod)).eval().edges();
 		if(perControlFlowEdges.isEmpty()){
 			GraphElement perCFEdge = Graph.U.createEdge(callsite, targetMethod);

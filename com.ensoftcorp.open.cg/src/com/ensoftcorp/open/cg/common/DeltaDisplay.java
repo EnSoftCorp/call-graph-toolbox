@@ -4,7 +4,7 @@ import java.awt.Color;
 
 import com.ensoftcorp.atlas.core.highlight.Highlighter;
 import com.ensoftcorp.atlas.core.query.Q;
-import com.ensoftcorp.open.commons.utilities.DisplayUtils;
+import com.ensoftcorp.open.commons.ui.utilities.DisplayUtils;
 
 public class DeltaDisplay {
 

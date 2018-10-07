@@ -3,7 +3,7 @@ package com.ensoftcorp.open.cg.analysis;
 import java.text.DecimalFormat;
 
 import com.ensoftcorp.atlas.core.query.Q;
-import com.ensoftcorp.atlas.core.script.Common;
+import com.ensoftcorp.atlas.core.query.Query;
 import com.ensoftcorp.open.cg.log.Log;
 
 public abstract class CGAnalysis {
@@ -19,7 +19,7 @@ public abstract class CGAnalysis {
 	 * @return
 	 */
 	public Q getCallGraph(){
-		return Common.universe().edgesTaggedWithAny(getCallEdgeTags());
+		return Query.universe().edges(getCallEdgeTags());
 	}
 	
 	/**
@@ -33,7 +33,7 @@ public abstract class CGAnalysis {
 	 * @return
 	 */
 	public Q getPerControlFlowGraph(){
-		return Common.universe().edgesTaggedWithAny(getPerControlFlowEdgeTags());
+		return Query.universe().edges(getPerControlFlowEdgeTags());
 	}
 	
 	/**

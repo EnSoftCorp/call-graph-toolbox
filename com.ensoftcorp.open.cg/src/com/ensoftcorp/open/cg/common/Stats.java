@@ -10,6 +10,7 @@ import com.ensoftcorp.atlas.core.db.graph.GraphElement;
 import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.query.Q;
+import com.ensoftcorp.atlas.core.query.Query;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.atlas.java.core.script.Common;
 import com.ensoftcorp.open.cg.analysis.CGAnalysis;
@@ -66,7 +67,7 @@ public class Stats {
 		double time = cga.run();
 		Q cg = cga.getCallGraph().retainEdges();
 		Graph cgGraph = cg.eval();
-		AtlasSet<Node> callsites = Common.universe().nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
+		AtlasSet<Node> callsites = Query.universe().nodes(XCSG.CallSite).eval().nodes();
 		
 		DecimalFormat decimalFormat = new DecimalFormat("#.##");
 		fw.write(cga.getClass().getSimpleName() + "," + decimalFormat.format(time)
@@ -80,11 +81,11 @@ public class Stats {
 	}
 
 	private static AtlasSet<Node> getStaticDispatches(AtlasSet<Node> callsites){
-		return Common.toQ(callsites).nodesTaggedWithAny(XCSG.StaticDispatchCallSite).eval().nodes();
+		return Common.toQ(callsites).nodes(XCSG.StaticDispatchCallSite).eval().nodes();
 	}
 	
 	private static AtlasSet<Node> getDynamicDispatches(AtlasSet<Node> callsites){
-		return Common.toQ(callsites).nodesTaggedWithAny(XCSG.DynamicDispatchCallSite).eval().nodes();
+		return Common.toQ(callsites).nodes(XCSG.DynamicDispatchCallSite).eval().nodes();
 	}
 	
 	private static Long getMaxDynamicDispatchesPerCallsite(AtlasSet<Node> callsites, CGAnalysis cga){

@@ -10,6 +10,7 @@ import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Attr;
 import com.ensoftcorp.atlas.core.query.Q;
+import com.ensoftcorp.atlas.core.query.Query;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.commons.utilities.CodeMapChangeListener;
@@ -64,7 +65,7 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 		}
 		
 //		// so just looking for know tags instead...
-//		if(!Common.universe().edgesTaggedWithAny("INFERRED").eval().edges().isEmpty()){
+//		if(!Query.universe().edges("INFERRED").eval().edges().isEmpty()){
 //			throw new RuntimeException("Points-to analysis has not been run!");
 //		}
 		
@@ -78,21 +79,21 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 		// but the call edges are really just a summary of the 
 		// data flow edges, so we can extract the call relationships
 		// retroactively out of the data flow graph
-		Q inferredDF = Common.universe().edgesTaggedWithAny(PointsToAnalysis.INFERRED_DATA_FLOW);
+		Q inferredDF = Query.universe().edges(PointsToAnalysis.INFERRED_DATA_FLOW);
 		
 		IProgressMonitor m = new org.eclipse.core.runtime.NullProgressMonitor();
 		
-		AtlasSet<Edge> dfInterprocInvokeEdges = Common.resolve(m, Common.universe().edgesTaggedWithAny(XCSG.DataFlow_Edge)).eval().edges();
+		AtlasSet<Edge> dfInterprocInvokeEdges = Common.resolve(m, Query.universe().edges(XCSG.DataFlow_Edge)).eval().edges();
 		for(Edge dfInterprocInvokeEdge : dfInterprocInvokeEdges){
 			if(inferredDF.eval().edges().contains(dfInterprocInvokeEdge)) {
 				// tag the inferred call summary, keep track of the edges that were not inferred
 				Q identityPass = Common.toQ(dfInterprocInvokeEdge.getNode(EdgeDirection.FROM));
-				Q callsiteCFNode = Common.universe().edgesTaggedWithAny(XCSG.Contains).predecessors(identityPass);
+				Q callsiteCFNode = Query.universe().edges(XCSG.Contains).predecessors(identityPass);
 				Q identity = Common.toQ(dfInterprocInvokeEdge.getNode(EdgeDirection.TO));
-				Q target = Common.universe().edgesTaggedWithAny(XCSG.Contains).predecessors(identity);
-				Q callsite = Common.universe().edgesTaggedWithAny(XCSG.Contains).successors(callsiteCFNode).nodesTaggedWithAny(XCSG.CallSite);
+				Q target = Query.universe().edges(XCSG.Contains).predecessors(identity);
+				Q callsite = Query.universe().edges(XCSG.Contains).successors(callsiteCFNode).nodes(XCSG.CallSite);
 				// infer per control flow call summary edges
-				for(@SuppressWarnings("unused") Edge perControlFlowEdge : Common.universe().edgesTaggedWithAll(Attr.Edge.PER_CONTROL_FLOW).betweenStep(callsiteCFNode, target).eval().edges()){
+				for(@SuppressWarnings("unused") Edge perControlFlowEdge : Query.universe().edgesTaggedWithAll(Attr.Edge.PER_CONTROL_FLOW).betweenStep(callsiteCFNode, target).eval().edges()){
 //					perControlFlowEdge.tag(PER_CONTROL_FLOW); // this is the Atlas way (from the control flow node)
 					Node callsiteGE = callsite.eval().nodes().getFirst();
 					if(callsiteGE != null){
@@ -101,31 +102,31 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 					}
 				}
 				// infer per method call summary edges
-				Q caller = Common.universe().edgesTaggedWithAny(XCSG.Contains).predecessors(callsiteCFNode);
-				for(Edge callEdge : Common.universe().edgesTaggedWithAll(XCSG.Call).betweenStep(caller, target).eval().edges()){
+				Q caller = Query.universe().edges(XCSG.Contains).predecessors(callsiteCFNode);
+				for(Edge callEdge : Query.universe().edgesTaggedWithAll(XCSG.Call).betweenStep(caller, target).eval().edges()){
 					callEdge.tag(CALL);
 				}
 			}
 		}
 		
 		// import the statically resolved methods from CHA
-		AtlasSet<Edge> callEdges = Common.universe().edgesTaggedWithAny(XCSG.Call).eval().edges();
-		AtlasSet<Node> reachableMethods = Common.universe().edgesTaggedWithAny(CALL).retainEdges().eval().nodes();
-		Q perControlFlowEdges = Common.universe().edgesTaggedWithAny(XCSG.ControlFlow_Edge);
-		Q declarations = Common.universe().edgesTaggedWithAny(XCSG.Contains);
+		AtlasSet<Edge> callEdges = Query.universe().edges(XCSG.Call).eval().edges();
+		AtlasSet<Node> reachableMethods = Query.universe().edges(CALL).retainEdges().eval().nodes();
+		Q perControlFlowEdges = Query.universe().edges(XCSG.ControlFlow_Edge);
+		Q declarations = Query.universe().edges(XCSG.Contains);
 		for(Edge callEdge : callEdges){
 			// add static dispatches to the call graph
 			// includes called methods marked static and constructors
 			Node calledMethod = callEdge.getNode(EdgeDirection.TO);
 			Node callingMethod = callEdge.getNode(EdgeDirection.FROM);
-			Q callingStaticDispatches = Common.toQ(callingMethod).contained().nodesTaggedWithAny(XCSG.StaticDispatchCallSite);
-			boolean isStaticDispatch = !Common.universe().edgesTaggedWithAny(PER_CONTROL_FLOW).predecessors(Common.toQ(calledMethod))
+			Q callingStaticDispatches = Common.toQ(callingMethod).contained().nodes(XCSG.StaticDispatchCallSite);
+			boolean isStaticDispatch = !Query.universe().edges(PER_CONTROL_FLOW).predecessors(Common.toQ(calledMethod))
 					.intersection(callingStaticDispatches).eval().nodes().isEmpty();
 			if(isStaticDispatch || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
 				if(reachableMethods.contains(callingMethod)){
 					callEdge.tag(CALL);
-					Q callsites = declarations.forward(Common.toQ(callingMethod)).nodesTaggedWithAny(XCSG.CallSite);
-					Q cfNodes = Common.universe().edgesTaggedWithAny(XCSG.Contains).predecessors(callsites);
+					Q callsites = declarations.forward(Common.toQ(callingMethod)).nodes(XCSG.CallSite);
+					Q cfNodes = Query.universe().edges(XCSG.Contains).predecessors(callsites);
 					for(Edge perControlFlowEdge : perControlFlowEdges.betweenStep(cfNodes, Common.toQ(calledMethod)).eval().edges()){
 						perControlFlowEdge.tag(PER_CONTROL_FLOW);
 					}

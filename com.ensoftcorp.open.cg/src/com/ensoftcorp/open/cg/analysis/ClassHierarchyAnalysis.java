@@ -13,6 +13,7 @@ import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.index.common.SourceCorrespondence;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
 import com.ensoftcorp.atlas.core.query.Q;
+import com.ensoftcorp.atlas.core.query.Query;
 import com.ensoftcorp.atlas.core.script.Common;
 import com.ensoftcorp.atlas.core.xcsg.XCSG;
 import com.ensoftcorp.open.cg.log.Log;
@@ -78,7 +79,7 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 		
 		if(CallGraphPreferences.isLibraryCallGraphConstructionEnabled()){
 			// add callsite summaries for each library method
-			for(Node library : Common.universe().nodes(XCSG.Library).eval().nodes()){
+			for(Node library : Query.universe().nodes(XCSG.Library).eval().nodes()){
 				Log.info("Generating call graph for: " + library.getAttr(XCSG.name));
 				try {
 					File libraryFile = null;
@@ -118,18 +119,18 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 			}
 		}
 		
-		typeHierarchy = Common.universe().edgesTaggedWithAny(XCSG.Supertype);
-		typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
-		invokedFunctionEdges = Common.universe().edgesTaggedWithAny(XCSG.InvokedFunction);
-		identityPassedToEdges = Common.universe().edgesTaggedWithAny(XCSG.IdentityPassedTo);
-		dataFlowEdges = Common.universe().edgesTaggedWithAny(XCSG.DataFlow_Edge);
-		methodSignatureGraph = Common.universe().edgesTaggedWithAny(XCSG.InvokedSignature).eval();
-		methods = Common.universe().nodesTaggedWithAny(XCSG.Method).eval().nodes();
+		typeHierarchy = Query.universe().edges(XCSG.Supertype);
+		typeOfEdges = Query.universe().edges(XCSG.TypeOf);
+		invokedFunctionEdges = Query.universe().edges(XCSG.InvokedFunction);
+		identityPassedToEdges = Query.universe().edges(XCSG.IdentityPassedTo);
+		dataFlowEdges = Query.universe().edges(XCSG.DataFlow_Edge);
+		methodSignatureGraph = Query.universe().edges(XCSG.InvokedSignature).eval();
+		methods = Query.universe().nodes(XCSG.Method).eval().nodes();
 		
 		// for each method
 		for(Node method : methods){
 			// for each callsite
-			AtlasSet<Node> callsites = CommonQueries.localDeclarations(Common.universe(), Common.toQ(method)).nodesTaggedWithAny(XCSG.CallSite).eval().nodes();
+			AtlasSet<Node> callsites = CommonQueries.localDeclarations(Query.universe(), Common.toQ(method)).nodes(XCSG.CallSite).eval().nodes();
 			for(Node callsite : callsites){
 				if(callsite.taggedWith(XCSG.StaticDispatchCallSite)){
 					// static dispatches (calls to constructors or methods marked as static) can be resolved immediately
@@ -163,7 +164,7 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 					// if a method is abstract, then its children must override it, so we can just remove all abstract
 					// methods from the graph (this might come into play if nearest matching method definition was abstract)
 					// note: its possible for a method to be re-abstracted by a subtype after its been made concrete
-					resolvedDispatches = resolvedDispatches.difference(Common.universe().nodesTaggedWithAny(XCSG.abstractMethod));
+					resolvedDispatches = resolvedDispatches.difference(Query.universe().nodes(XCSG.abstractMethod));
 					
 					// lastly, if the method signature is concrete and the type of the method signature is abstract 
 					// and all subtypes override the method signature then the method signature can never be called
@@ -174,7 +175,7 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 						boolean abstractMethodSignatureType = methodSignatureType.eval().nodes().one().taggedWith(XCSG.Java.AbstractClass);
 						if(abstractMethodSignatureType){
 							Q resolvedDispatchConcreteSubTypes = resolvedDispatches.difference(Common.toQ(methodSignature)).parent()
-									.difference(Common.universe().nodesTaggedWithAny(XCSG.Java.AbstractClass));
+									.difference(Query.universe().nodes(XCSG.Java.AbstractClass));
 							if(!resolvedDispatchConcreteSubTypes.eval().nodes().isEmpty()){
 								// there are concrete subtypes
 								if(declaredSubtypeHierarchy.difference(methodSignatureType, resolvedDispatchConcreteSubTypes).eval().nodes().isEmpty()){
