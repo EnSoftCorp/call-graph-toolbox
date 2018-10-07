@@ -95,9 +95,9 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 				// infer per control flow call summary edges
 				for(@SuppressWarnings("unused") Edge perControlFlowEdge : Query.universe().edgesTaggedWithAll(Attr.Edge.PER_CONTROL_FLOW).betweenStep(callsiteCFNode, target).eval().edges()){
 //					perControlFlowEdge.tag(PER_CONTROL_FLOW); // this is the Atlas way (from the control flow node)
-					Node callsiteGE = callsite.eval().nodes().getFirst();
+					Node callsiteGE = callsite.eval().nodes().one();
 					if(callsiteGE != null){
-						Edge perCFEdge = Graph.U.createEdge(callsiteGE, target.eval().nodes().getFirst());
+						Edge perCFEdge = Graph.U.createEdge(callsiteGE, target.eval().nodes().one());
 						perCFEdge.tag(PER_CONTROL_FLOW); // this is an edge from the callsite to the target method
 					}
 				}
