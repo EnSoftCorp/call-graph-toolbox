@@ -5,6 +5,4 @@ com.ensoftcorp.open.cg.common
 com.ensoftcorp.open.cg.log
 com.ensoftcorp.open.cg.preferences
 com.ensoftcorp.open.cg.summary
-com.ensoftcorp.open.cg.ui
-com.ensoftcorp.open.cg.ui.smart
 com.ensoftcorp.open.cg.utils

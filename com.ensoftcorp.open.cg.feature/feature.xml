@@ -39,14 +39,25 @@ SOFTWARE.
 
    <requires>
       <import plugin="org.eclipse.debug.ui"/>
-      <import plugin="com.ensoftcorp.open.commons" version="3.0.13" match="greaterOrEqual"/>
-      <import plugin="com.ensoftcorp.open.pointsto" version="3.0.13" match="greaterOrEqual"/>
-      <import plugin="com.ensoftcorp.atlas.core" version="3.0.13" match="greaterOrEqual"/>
-      <import plugin="com.ensoftcorp.open.java.commons" version="3.0.13" match="greaterOrEqual"/>
+      <import plugin="com.ensoftcorp.open.commons" version="3.3.7" match="greaterOrEqual"/>
+      <import plugin="com.ensoftcorp.open.commons.ui" version="3.3.7" match="greaterOrEqual"/>
+      <import plugin="com.ensoftcorp.open.pointsto" version="3.3.7" match="greaterOrEqual"/>
+      <import plugin="com.ensoftcorp.atlas.core" version="3.3.7" match="greaterOrEqual"/>
+      <import plugin="com.ensoftcorp.open.java.commons" version="3.3.7" match="greaterOrEqual"/>
+      <import plugin="org.objectweb.asm.commons" version="6.0.0" match="greaterOrEqual"/>
+      <import plugin="org.objectweb.asm.tree" version="6.0.0" match="greaterOrEqual"/>
+      <import plugin="com.ensoftcorp.open.cg" version="3.3.7" match="greaterOrEqual"/>
    </requires>
 
    <plugin
          id="com.ensoftcorp.open.cg"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="com.ensoftcorp.open.cg.ui"
          download-size="0"
          install-size="0"
          version="0.0.0"

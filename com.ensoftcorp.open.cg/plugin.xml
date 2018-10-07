@@ -2,60 +2,17 @@
 <?eclipse version="3.4"?>
 <plugin>
 
-    <!-- create an initializer extension to initialize preferences -->
+   <!-- create an initializer extension to initialize preferences -->
    <extension
       point="org.eclipse.equinox.preferences.preferences">
 	   <initializer
 	         class="com.ensoftcorp.open.cg.preferences.CallGraphPreferences">
 	   </initializer>
-	</extension>
-   
-   <!-- create a preferences menu item for call graph toolbox -->
-   <extension
-         point="org.eclipse.ui.preferencePages">
-      <page
-            class="com.ensoftcorp.open.cg.ui.CallGraphPreferencesPage"
-            id="com.ensoftcorp.open.cg.ui.preferences"
-            name="Call Graph Construction"
-            category="com.ensoftcorp.open.commons.ui.toolbox.preferences">
-      </page>
    </extension>
    
    <!-- adds the prioritized codemap stage for running analysis -->
    <extension point="com.ensoftcorp.open.commons.codemap">
-      <codemap class="com.ensoftcorp.open.cg.codemap.CallGraphCodemapStage"></codemap>
-   </extension>
-
-   <!-- add some smart view extensions for each call graph construction algorithm -->
-   <extension
-         point="com.ensoftcorp.atlas.ui.smartViewScript">
-      <script
-            class="com.ensoftcorp.open.cg.ui.smart.RACallGraphSmartView">
-      </script>
-      <script
-            class="com.ensoftcorp.open.cg.ui.smart.CHACallGraphSmartView">
-      </script>
-      <script
-            class="com.ensoftcorp.open.cg.ui.smart.RTACallGraphSmartView">
-      </script>
-      <script
-            class="com.ensoftcorp.open.cg.ui.smart.MTACallGraphSmartView">
-      </script>
-      <script
-            class="com.ensoftcorp.open.cg.ui.smart.FTACallGraphSmartView">
-      </script>
-      <script
-            class="com.ensoftcorp.open.cg.ui.smart.ETACallGraphSmartView">
-      </script>
-      <script
-            class="com.ensoftcorp.open.cg.ui.smart.XTACallGraphSmartView">
-      </script>
-      <script
-            class="com.ensoftcorp.open.cg.ui.smart.ClassicXTACallGraphSmartView">
-      </script>
-      <script
-            class="com.ensoftcorp.open.cg.ui.smart.ZeroCFACallGraphSmartView">
-      </script>
+      <codemap class="com.ensoftcorp.open.cg.codemap.CallGraphCodemapStage" />
    </extension>
 
 </plugin>

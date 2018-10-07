@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <!-- create a preferences menu item for call graph toolbox -->
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="com.ensoftcorp.open.cg.ui.preferences.CallGraphPreferencesPage"
+            id="com.ensoftcorp.open.cg.ui.preferences"
+            name="Call Graph Construction"
+            category="com.ensoftcorp.open.commons.ui.toolbox.preferences">
+      </page>
+   </extension>
+
+   <!-- add some smart view extensions for each call graph construction algorithm -->
+   <extension point="com.ensoftcorp.atlas.ui.smartViewScript">
+      <script class="com.ensoftcorp.open.cg.ui.smart.RACallGraphSmartView" />
+      <script class="com.ensoftcorp.open.cg.ui.smart.CHACallGraphSmartView" />
+      <script class="com.ensoftcorp.open.cg.ui.smart.RTACallGraphSmartView" />
+      <script class="com.ensoftcorp.open.cg.ui.smart.MTACallGraphSmartView" />
+      <script class="com.ensoftcorp.open.cg.ui.smart.FTACallGraphSmartView" />
+      <script class="com.ensoftcorp.open.cg.ui.smart.ETACallGraphSmartView" />
+      <script class="com.ensoftcorp.open.cg.ui.smart.XTACallGraphSmartView" />
+      <script class="com.ensoftcorp.open.cg.ui.smart.ClassicXTACallGraphSmartView" />
+      <script class="com.ensoftcorp.open.cg.ui.smart.ZeroCFACallGraphSmartView" />
+   </extension>
+
+</plugin>
