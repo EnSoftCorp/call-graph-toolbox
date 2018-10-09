@@ -4,7 +4,6 @@ import org.eclipse.core.runtime.IProgressMonitor;
 
 import com.ensoftcorp.atlas.core.db.graph.Edge;
 import com.ensoftcorp.atlas.core.db.graph.Graph;
-import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.indexing.IndexingUtil;
@@ -87,9 +86,9 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 		for(Edge dfInterprocInvokeEdge : dfInterprocInvokeEdges){
 			if(inferredDF.eval().edges().contains(dfInterprocInvokeEdge)) {
 				// tag the inferred call summary, keep track of the edges that were not inferred
-				Q identityPass = Common.toQ(dfInterprocInvokeEdge.getNode(EdgeDirection.FROM));
+				Q identityPass = Common.toQ(dfInterprocInvokeEdge.from());
 				Q callsiteCFNode = Query.universe().edges(XCSG.Contains).predecessors(identityPass);
-				Q identity = Common.toQ(dfInterprocInvokeEdge.getNode(EdgeDirection.TO));
+				Q identity = Common.toQ(dfInterprocInvokeEdge.to());
 				Q target = Query.universe().edges(XCSG.Contains).predecessors(identity);
 				Q callsite = Query.universe().edges(XCSG.Contains).successors(callsiteCFNode).nodes(XCSG.CallSite);
 				// infer per control flow call summary edges
@@ -117,8 +116,8 @@ public class ZeroControlFlowAnalysis extends CGAnalysis {
 		for(Edge callEdge : callEdges){
 			// add static dispatches to the call graph
 			// includes called methods marked static and constructors
-			Node calledMethod = callEdge.getNode(EdgeDirection.TO);
-			Node callingMethod = callEdge.getNode(EdgeDirection.FROM);
+			Node calledMethod = callEdge.to();
+			Node callingMethod = callEdge.from();
 			Q callingStaticDispatches = Common.toQ(callingMethod).contained().nodes(XCSG.StaticDispatchCallSite);
 			boolean isStaticDispatch = !Query.universe().edges(PER_CONTROL_FLOW).predecessors(Common.toQ(calledMethod))
 					.intersection(callingStaticDispatches).eval().nodes().isEmpty();

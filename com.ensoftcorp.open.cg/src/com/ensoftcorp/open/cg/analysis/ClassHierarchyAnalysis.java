@@ -6,7 +6,6 @@ import org.objectweb.asm.tree.ClassNode;
 
 import com.ensoftcorp.atlas.core.db.graph.Edge;
 import com.ensoftcorp.atlas.core.db.graph.Graph;
-import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.NodeDirection;
 import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
@@ -150,7 +149,7 @@ public class ClassHierarchyAnalysis extends CGAnalysis {
 					// the declared type itself) while traversing from declared type to Object on the descendant path
 					// but an easier way to get this is to use Atlas' InvokedSignature edge to get the nearest method definition
 					Edge methodSignatureEdge = methodSignatureGraph.edges(callsite, NodeDirection.OUT).one();
-					Node methodSignature = methodSignatureEdge.getNode(EdgeDirection.TO);
+					Node methodSignature = methodSignatureEdge.to();
 					Q resolvedDispatches = Common.toQ(methodSignature);
 					
 					// subtypes of the declared type can override the nearest target method definition, 

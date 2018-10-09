@@ -2,7 +2,6 @@ package com.ensoftcorp.open.cg.utils;
 
 import com.ensoftcorp.atlas.core.db.graph.Edge;
 import com.ensoftcorp.atlas.core.db.graph.Graph;
-import com.ensoftcorp.atlas.core.db.graph.GraphElement;
 import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.query.Q;
@@ -19,7 +18,7 @@ public class CallGraphConstruction {
 	 * @param targetMethod
 	 * @return
 	 */
-	public static void createCallEdge(GraphElement callsite, GraphElement method, GraphElement targetMethod, String methodRelationship, String callsiteRelationship) {
+	public static void createCallEdge(Node callsite, Node method, Node targetMethod, String methodRelationship, String callsiteRelationship) {
 		createRelationship(callsite, method, targetMethod, methodRelationship, callsiteRelationship, "call");
 	}
 	
@@ -30,15 +29,15 @@ public class CallGraphConstruction {
 	 * @param targetMethod
 	 * @return
 	 */
-	public static void createLibraryCallEdge(GraphElement callsite, GraphElement method, GraphElement targetMethod, String methodRelationship, String callsiteRelationship) {
+	public static void createLibraryCallEdge(Node callsite, Node method, Node targetMethod, String methodRelationship, String callsiteRelationship) {
 		createRelationship(callsite, method, targetMethod, methodRelationship, callsiteRelationship, "library-call");
 	}
 	
-	private static void createRelationship(GraphElement callsite, GraphElement method, GraphElement targetMethod, String methodRelationship, String callsiteRelationship, String displayName) {
+	private static void createRelationship(Node callsite, Node method, Node targetMethod, String methodRelationship, String callsiteRelationship, String displayName) {
 		Q callEdgesQ = Query.universe().edges(methodRelationship);
 		AtlasSet<Edge> callEdges = callEdgesQ.betweenStep(Common.toQ(method), Common.toQ(targetMethod)).eval().edges();
 		if(callEdges.isEmpty()){
-			GraphElement callEdge = Graph.U.createEdge(method, targetMethod);
+			Edge callEdge = Graph.U.createEdge(method, targetMethod);
 			callEdge.tag(methodRelationship);
 			callEdge.attr().put(XCSG.name, displayName);
 		}
@@ -46,7 +45,7 @@ public class CallGraphConstruction {
 		Q perControlFlowEdgesQ = Query.universe().edges(callsiteRelationship);
 		AtlasSet<Edge> perControlFlowEdges = perControlFlowEdgesQ.betweenStep(Common.toQ(callsite), Common.toQ(targetMethod)).eval().edges();
 		if(perControlFlowEdges.isEmpty()){
-			GraphElement perCFEdge = Graph.U.createEdge(callsite, targetMethod);
+			Edge perCFEdge = Graph.U.createEdge(callsite, targetMethod);
 			perCFEdge.tag(callsiteRelationship);
 		}
 	}

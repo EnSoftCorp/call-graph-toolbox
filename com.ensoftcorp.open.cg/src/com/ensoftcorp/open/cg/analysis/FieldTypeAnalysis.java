@@ -3,7 +3,6 @@ package com.ensoftcorp.open.cg.analysis;
 import java.util.LinkedList;
 
 import com.ensoftcorp.atlas.core.db.graph.Edge;
-import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
@@ -161,8 +160,8 @@ public class FieldTypeAnalysis extends CGAnalysis {
 				for(Edge callEdge : callEdges){
 					// add static dispatches to the fta call graph
 					// includes called methods marked static and constructors
-					Node calledMethod = callEdge.getNode(EdgeDirection.TO);
-					Node callingMethod = callEdge.getNode(EdgeDirection.FROM);
+					Node calledMethod = callEdge.to();
+					Node callingMethod = callEdge.from();
 					Q callingStaticDispatches = Common.toQ(callingMethod).contained().nodes(XCSG.StaticDispatchCallSite);
 					boolean isStaticDispatch = !cha.getPerControlFlowGraph().predecessors(Common.toQ(calledMethod)).intersection(callingStaticDispatches).eval().nodes().isEmpty();
 					if(isStaticDispatch || calledMethod.taggedWith(XCSG.Constructor) || calledMethod.getAttr(XCSG.name).equals("<init>")){
@@ -201,8 +200,8 @@ public class FieldTypeAnalysis extends CGAnalysis {
 		Q pcfCHA = cha.getPerControlFlowGraph();
 		for(Edge xtaEdge : cgFTA){
 			xtaEdge.tag(CALL);
-			Node callingMethod = xtaEdge.getNode(EdgeDirection.FROM);
-			Node calledMethod = xtaEdge.getNode(EdgeDirection.TO);
+			Node callingMethod = xtaEdge.from();
+			Node calledMethod = xtaEdge.to();
 			Q callsites = declarations.forward(Common.toQ(callingMethod)).nodes(XCSG.CallSite);
 			for(Edge perControlFlowEdge : pcfCHA.betweenStep(callsites, Common.toQ(calledMethod)).eval().edges()){
 				perControlFlowEdge.tag(PER_CONTROL_FLOW);

@@ -2,7 +2,6 @@ package com.ensoftcorp.open.cg.analysis;
 
 import com.ensoftcorp.atlas.core.db.graph.Edge;
 import com.ensoftcorp.atlas.core.db.graph.Graph;
-import com.ensoftcorp.atlas.core.db.graph.GraphElement.EdgeDirection;
 import com.ensoftcorp.atlas.core.db.graph.GraphElement.NodeDirection;
 import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasHashSet;
@@ -172,7 +171,7 @@ public class RapidTypeAnalysis extends CGAnalysis {
 						// the nearest method definition is the method definition closest to the declared type (including
 						// the declared type itself) while traversing from declared type to Object on the descendant path
 						// but an easier way to get this is to use Atlas' InvokedSignature edge to get the nearest method definition
-						Node methodSignature = methodSignatureGraph.edges(callsite, NodeDirection.OUT).one().getNode(EdgeDirection.TO);
+						Node methodSignature = methodSignatureGraph.edges(callsite, NodeDirection.OUT).one().to();
 						Q resolvedDispatches = Common.toQ(methodSignature);
 						
 						// subtypes of the declared type can override the nearest target method definition, 

@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 
 import com.ensoftcorp.atlas.core.db.graph.Graph;
-import com.ensoftcorp.atlas.core.db.graph.GraphElement;
 import com.ensoftcorp.atlas.core.db.graph.Node;
 import com.ensoftcorp.atlas.core.db.set.AtlasSet;
 import com.ensoftcorp.atlas.core.query.Q;
@@ -90,7 +89,7 @@ public class Stats {
 	
 	private static Long getMaxDynamicDispatchesPerCallsite(AtlasSet<Node> callsites, CGAnalysis cga){
 		long max = Long.MIN_VALUE;
-		for(GraphElement callsite : getDynamicDispatches(callsites)){
+		for(Node callsite : getDynamicDispatches(callsites)){
 			long dispatches = cga.getPerControlFlowGraph().successors(Common.toQ(callsite)).eval().nodes().size();
 			if(dispatches > max){
 				max = dispatches;
