@@ -35,43 +35,54 @@ public class CallGraphCodemapStage extends PrioritizedCodemapStage {
 	}
 
 	@Override
-	public void performIndexing(IProgressMonitor monitor) {
+	public boolean performIndexing(IProgressMonitor monitor) {
+		boolean runIndexer = false;
 		if(CallGraphPreferences.isReachabilityAnalysisEnabled()){
+			runIndexer = true;
 			ReachabilityAnalysis ra = ReachabilityAnalysis.getInstance();
 			ra.run();
 		}
 		if(CallGraphPreferences.isClassHierarchyAnalysisEnabled()){
+			runIndexer = true;
 			ClassHierarchyAnalysis cha = ClassHierarchyAnalysis.getInstance();
 			cha.run();
 		}
 		if(CallGraphPreferences.isRapidTypeAnalysisEnabled()){
+			runIndexer = true;
 			RapidTypeAnalysis rta = RapidTypeAnalysis.getInstance();
 			rta.run();
 		}
 		if(CallGraphPreferences.isMethodTypeAnalysisEnabled()){
+			runIndexer = true;
 			MethodTypeAnalysis mta = MethodTypeAnalysis.getInstance();
 			mta.run();
 		}
 		if(CallGraphPreferences.isFieldTypeAnalysisEnabled()){
+			runIndexer = true;
 			FieldTypeAnalysis fta = FieldTypeAnalysis.getInstance();
 			fta.run();
 		}
 		if(CallGraphPreferences.isExceptionTypeAnalysisEnabled()){
+			runIndexer = true;
 			ExceptionTypeAnalysis eta = ExceptionTypeAnalysis.getInstance();
 			eta.run();
 		}
 		if(CallGraphPreferences.isClassicHybridTypeAnalysisEnabled()){
+			runIndexer = true;
 			ClassicHybridTypeAnalysis xta = ClassicHybridTypeAnalysis.getInstance();
 			xta.run();
 		}
 		if(CallGraphPreferences.isHybridTypeAnalysisEnabled()){
+			runIndexer = true;
 			HybridTypeAnalysis xta2 = HybridTypeAnalysis.getInstance();
 			xta2.run();
 		}
 		if(CallGraphPreferences.isZeroCFAEnabled()){
+			runIndexer = true;
 			ZeroControlFlowAnalysis zeroCFA = ZeroControlFlowAnalysis.getInstance();
 			zeroCFA.run();
 		}
+		return runIndexer;
 	}
 
 }

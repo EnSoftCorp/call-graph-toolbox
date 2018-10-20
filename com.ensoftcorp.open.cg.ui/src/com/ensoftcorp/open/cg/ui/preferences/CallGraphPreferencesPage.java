@@ -8,7 +8,6 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
 import com.ensoftcorp.open.cg.preferences.CallGraphPreferences;
-import com.ensoftcorp.open.cg.ui.Activator;
 import com.ensoftcorp.open.commons.ui.components.LabelFieldEditor;
 import com.ensoftcorp.open.commons.ui.components.SpacerFieldEditor;
 
@@ -43,7 +42,7 @@ public class CallGraphPreferencesPage extends FieldEditorPreferencePage implemen
 
 	@Override
 	public void init(IWorkbench workbench) {
-		IPreferenceStore preferences = Activator.getDefault().getPreferenceStore();
+		IPreferenceStore preferences = CallGraphPreferences.getPreferenceStore();
 		setPreferenceStore(preferences);
 		setDescription("Configure preferences for the Call Graph Toolbox plugin.");
 
