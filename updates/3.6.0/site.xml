@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature url="features/com.ensoftcorp.open.cg.feature_3.6.0.202005250009.jar" id="com.ensoftcorp.open.cg.feature" version="3.6.0.202005250009">
+      <category name="com.ensoftcorp.open.cg.category"/>
+   </feature>
+   <category-def name="com.ensoftcorp.open.cg.category" label="Call Graph Toolbox">
+      <description>
+         A toolbox with several call graph construction algorithm implementations.
+      </description>
+   </category-def>
+</site>
