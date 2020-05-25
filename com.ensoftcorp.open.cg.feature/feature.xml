@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
-      id="com.ensoftcorp.open.cg"
+      id="com.ensoftcorp.open.cg.feature"
       label="Call Graph Toolbox"
       version="3.6.0.qualifier"
       provider-name="Ensoft Corp.">
