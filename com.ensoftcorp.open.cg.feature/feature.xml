@@ -2,7 +2,7 @@
 <feature
       id="com.ensoftcorp.open.cg.feature"
       label="Call Graph Toolbox"
-      version="3.6.0.qualifier"
+      version="3.9.2.qualifier"
       provider-name="Ensoft Corp.">
 
    <description url="https://ensoftcorp.github.io/call-graph-toolbox">
@@ -38,12 +38,12 @@ SOFTWARE.
    </license>
 
    <requires>
-      <import plugin="com.ensoftcorp.open.commons" version="3.6.0" match="greaterOrEqual"/>
-      <import plugin="com.ensoftcorp.open.java.commons" version="3.6.0" match="greaterOrEqual"/>
-      <import plugin="com.ensoftcorp.open.pointsto" version="3.6.0" match="greaterOrEqual"/>
+      <import plugin="com.ensoftcorp.open.commons" version="3.9.2" match="greaterOrEqual"/>
+      <import plugin="com.ensoftcorp.open.java.commons" version="3.9.2" match="greaterOrEqual"/>
+      <import plugin="com.ensoftcorp.open.pointsto" version="3.9.2" match="greaterOrEqual"/>
       <import plugin="org.objectweb.asm.tree" version="6.0.0" match="greaterOrEqual"/>
-      <import plugin="com.ensoftcorp.open.commons.ui" version="3.6.0" match="greaterOrEqual"/>
-      <import plugin="com.ensoftcorp.open.cg" version="3.6.0" match="greaterOrEqual"/>
+      <import plugin="com.ensoftcorp.open.commons.ui" version="3.9.2" match="greaterOrEqual"/>
+      <import plugin="com.ensoftcorp.open.cg" version="3.9.2" match="greaterOrEqual"/>
       <import plugin="org.objectweb.asm" version="6.0.0" match="greaterOrEqual"/>
    </requires>
 
